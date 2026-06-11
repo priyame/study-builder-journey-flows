@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Tag, GitBranch, Users, FileDown } from "lucide-react";
+import { Tag, GitBranch, Users, FileDown, GitFork } from "lucide-react";
 
 const SLICES = [
   {
@@ -9,6 +9,14 @@ const SLICES = [
     quote: "A human is going to go on a journey and throughout the way, we're going to hang a bunch of tags on them that later help us group them. But we aren't pre-grouping them.",
     body: "Tag Categories + Tag Assignment Rules replace the legacy Participant Group entity. 8 category types, 7 trigger types, both auto and manual assignment are first-class.",
     icon: Tag,
+  },
+  {
+    href: "/study/journey",
+    title: "Journey · Workflow Authoring",
+    source: "PRD #12 v0.8 §4.5 · visual borrow from Cohort-Workflow-Optimization",
+    quote: "Builders need to anchor work to named transitions in the participant's journey, not just to study start.",
+    body: "Three view modes (Visits · Flow · Sequence) over the same canonical workflow. Milestones as first-class nodes. Trigger families surface 7 canonical trigger_types as 4 UI groupings. Branch on the ARM tag, converge at End of Treatment.",
+    icon: GitFork,
   },
   {
     href: "/study/versions",
@@ -42,9 +50,9 @@ export default function HomePage() {
       <div className="page-header">
         <h1>Study Builder · Journey Flows</h1>
         <p className="lede">
-          A focused sketch of the new study-build model. Four slices: how participants are
-          characterized (Tags), how the configuration is versioned (Draft/UAT/Live), and how
-          subjects + exports work in practice.
+          A focused sketch of the new study-build model. Five slices: how participants are
+          characterized (Tags), how the journey is authored (§4.5), how the configuration is
+          versioned (Draft/UAT/Live), and how subjects + exports work in practice.
         </p>
         <span className="source-tag">PRD #12 v0.8 · merged 2026-06-10 · for team review</span>
       </div>
@@ -80,9 +88,9 @@ export default function HomePage() {
           Out of scope for this sketch
         </h3>
         <ul style={{ color: "var(--fg-secondary)", fontSize: 13, lineHeight: 1.7, paddingLeft: 20 }}>
-          <li>Journey + Workflow Authoring Surface (§4.5) — deferred to the next iteration.</li>
           <li>AI Import Wizard (Story 1) and Template flow (Story 2) — separate review.</li>
-          <li>eCRF Builder, Schedule of Activities, Edit Checks — these consume Tags/Versions, not author them.</li>
+          <li>eCRF Builder, Edit Checks library — these consume Tags / Versions / Journey, they don&apos;t author them.</li>
+          <li>Full drag-and-drop authoring in Sequence view — lands in R1.1 per §4.5.</li>
         </ul>
       </div>
     </>

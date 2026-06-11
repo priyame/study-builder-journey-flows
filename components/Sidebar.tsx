@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Tag, GitBranch, Users, FileDown, Home, type LucideIcon } from "lucide-react";
+import { Tag, GitBranch, Users, FileDown, Home, GitFork, type LucideIcon } from "lucide-react";
 
 interface NavItem {
   href: string;
@@ -20,6 +20,7 @@ const NAV: { title: string; items: NavItem[] }[] = [
     title: "Study Build",
     items: [
       { href: "/study/tags",     label: "Tags & Rules",       icon: Tag,       badge: "Kelly" },
+      { href: "/study/journey",  label: "Journey",            icon: GitFork,   badge: "§4.5" },
       { href: "/study/versions", label: "Versions",           icon: GitBranch, badge: "NFR-107" },
       { href: "/study/subjects", label: "Subjects & Enrollment", icon: Users,  badge: "Pooja/Ana" },
       { href: "/study/export",   label: "Export Shape",       icon: FileDown,  badge: "NFR-095" },
