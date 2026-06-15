@@ -1,14 +1,18 @@
+"use client";
+
 import { EnvBanner } from "@/components/EnvBanner";
 import { VersionBadge } from "@/components/VersionBadge";
 import {
-  SEED_CATEGORIES,
-  SEED_RULES,
   TRIGGER_LABELS,
   CATEGORY_TYPE_LABELS,
   ASSIGNMENT_MODE_LABELS,
 } from "@/components/tags/seed";
+import { useActiveStudy } from "@/lib/active-study";
 
 export default function TagsPage() {
+  const study = useActiveStudy();
+  const { tagCategories, tagRules, identity } = study;
+
   return (
     <>
       <div className="page-header">
@@ -16,16 +20,14 @@ export default function TagsPage() {
         <p className="lede">
           Participants accumulate tags throughout their journey — they are not pre-grouped at
           design time. <strong>Groups don&apos;t exist as a stored entity</strong>; they are queries over
-          tags at runtime. (PRD #12 v0.8 §4, Doctrine D1.)
+          tags at runtime. (PRD #12 v0.8 §4, Doctrine D1.) — viewing{" "}
+          <strong style={{ color: "var(--accent)" }}>{identity.code}</strong>.
         </p>
         <span className="source-tag">Kelly Ritch · 2026-06-04 · v0.8 inversion of the Participant Group entity</span>
       </div>
 
       <EnvBanner />
 
-      {/* -------------------------------------------------------------------
-          Tag Categories
-          ------------------------------------------------------------------- */}
       <div className="card">
         <div className="card-header">
           <h2>Tag Categories</h2>
@@ -40,14 +42,14 @@ export default function TagsPage() {
               <tr>
                 <th style={{ width: 180 }}>Builder name (§3.5)</th>
                 <th style={{ width: 130 }}>category_type</th>
-                <th style={{ width: 150 }}>Allowed values</th>
+                <th style={{ width: 200 }}>Allowed values</th>
                 <th style={{ width: 130 }}>assignment_mode</th>
                 <th>Usages</th>
-                <th style={{ width: 70 }}>Status</th>
+                <th style={{ width: 80 }}>Status</th>
               </tr>
             </thead>
             <tbody>
-              {SEED_CATEGORIES.map((tc) => (
+              {tagCategories.map((tc) => (
                 <tr key={tc.id}>
                   <td>
                     <div style={{ fontWeight: 600 }}>{tc.name}</div>
@@ -95,13 +97,10 @@ export default function TagsPage() {
 
       <div style={{ height: 24 }} />
 
-      {/* -------------------------------------------------------------------
-          Tag Assignment Rules
-          ------------------------------------------------------------------- */}
       <div className="card">
         <div className="card-header">
           <h2>Tag Assignment Rules</h2>
-          <span className="sub">How a participant accumulates tags — auto and manual are both first-class (Pooja/Ana 2026-06-10)</span>
+          <span className="sub">How a participant accumulates tags — auto and manual are both first-class</span>
           <div style={{ marginLeft: "auto" }}>
             <button className="btn btn-primary btn-sm">+ New Rule</button>
           </div>
@@ -113,14 +112,14 @@ export default function TagsPage() {
                 <th style={{ width: 180 }}>Category</th>
                 <th style={{ width: 130 }}>trigger_type</th>
                 <th>Condition (preview)</th>
-                <th style={{ width: 90 }}>target_value</th>
-                <th style={{ width: 130 }}>Owner</th>
+                <th style={{ width: 100 }}>target_value</th>
+                <th style={{ width: 150 }}>Owner</th>
                 <th style={{ width: 90 }}>Status</th>
               </tr>
             </thead>
             <tbody>
-              {SEED_RULES.map((r) => {
-                const cat = SEED_CATEGORIES.find((c) => c.id === r.tag_category_id);
+              {tagRules.map((r) => {
+                const cat = tagCategories.find((c) => c.id === r.tag_category_id);
                 return (
                   <tr key={r.id}>
                     <td>{cat?.name ?? r.tag_category_id}</td>
@@ -149,13 +148,28 @@ export default function TagsPage() {
 
       <div style={{ height: 24 }} />
 
-      {/* -------------------------------------------------------------------
-          Tag accumulation example — Story 4c
-          ------------------------------------------------------------------- */}
+      <div className="card">
+        <div className="card-header">
+          <h2>Vernacular for {identity.code}</h2>
+          <span className="sub">§3.5 — builder-named labels per study; renaming is non-versioning</span>
+        </div>
+        <div className="card-body">
+          <table className="table">
+            <tbody>
+              <tr><td style={{ width: 220 }} className="muted">Participant label</td><td style={{ fontWeight: 600 }}>{study.vernacular.participant_label}</td></tr>
+              <tr><td className="muted">Journey element label</td><td style={{ fontWeight: 600 }}>{study.vernacular.journey_element_label}</td></tr>
+              <tr><td className="muted">Enrollment trigger label</td><td style={{ fontWeight: 600 }}>{study.vernacular.enrollment_trigger_label}</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style={{ height: 24 }} />
+
       <div className="card">
         <div className="card-header">
           <h2>Example: tag accumulation for one participant</h2>
-          <span className="sub">Story 4c — append-only event log; current tag = latest non-superseded row</span>
+          <span className="sub">Append-only event log; current tag = latest non-superseded row</span>
         </div>
         <div className="card-body">
           <table className="table">
@@ -170,22 +184,26 @@ export default function TagsPage() {
             </thead>
             <tbody>
               <tr><td>2026-04-12 09:14</td><td>All Participants</td><td><span className="code">ALL</span></td><td>system</td><td>auto on participant create</td></tr>
-              <tr><td>2026-04-12 09:14</td><td>Risk Profile</td><td><span className="code">HR</span></td><td>rule <span className="code">r-risk-form</span></td><td>Baseline form: GFR=52</td></tr>
-              <tr><td>2026-04-18 14:02</td><td>Randomization Arm</td><td><span className="code">TRTA</span></td><td>rule <span className="code">r-arm-irt</span></td><td>IRT msg #IRT-447</td></tr>
-              <tr><td>2026-04-18 14:02</td><td>Enrollment Cohort</td><td><span className="code">C1</span></td><td>rule <span className="code">r-cohort-time</span></td><td>First-50-enrolled rule</td></tr>
-              <tr><td>2026-05-30 11:20</td><td>Randomization Arm</td><td><span className="code">SOC</span></td><td>user <span className="code">akhan@…</span></td><td>Manual override · reason: &quot;Re-randomized per protocol amendment v1.2&quot;</td></tr>
-              <tr><td>2026-06-01 08:00</td><td>ITT Population</td><td><span className="code">ITT</span></td><td>rule <span className="code">r-itt-rule</span></td><td>Conditional: randomized AND no PV</td></tr>
+              {tagCategories.filter((c) => c.category_type !== "all_participants").slice(0, 3).map((c, i) => (
+                <tr key={c.id}>
+                  <td>2026-04-1{8 + i} 14:0{i}</td>
+                  <td>{c.name}</td>
+                  <td><span className="code">{c.allowed_values[0]?.export_code}</span></td>
+                  <td>{c.assignment_mode === "manual" ? "user · jrose@…" : `rule`}</td>
+                  <td>{c.description ?? c.assignment_mode}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
           <div className="divider" />
           <div className="row" style={{ gap: 12, flexWrap: "wrap" }}>
             <span className="muted" style={{ fontSize: 12 }}>Current tag set:</span>
-            <span className="chip slate">All Participants: ALL</span>
-            <span className="chip slate">Risk Profile: HR</span>
-            <span className="chip slate">Randomization Arm: SOC <span style={{ opacity: 0.7, marginLeft: 4 }}>(was TRTA)</span></span>
-            <span className="chip slate">Enrollment Cohort: C1</span>
-            <span className="chip slate">ITT: ITT</span>
-            <VersionBadge status="Published" label="Bound to v1.2" />
+            {tagCategories.slice(0, 5).map((c) => (
+              <span key={c.id} className="chip slate">
+                {c.name}: {c.allowed_values[0]?.export_code}
+              </span>
+            ))}
+            <VersionBadge status="Published" label="Bound to current Live" />
           </div>
         </div>
       </div>

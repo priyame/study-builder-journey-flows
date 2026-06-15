@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Grid3X3, GitFork, ListOrdered } from "lucide-react";
+import { Grid3X3, GitFork, ListOrdered, AlertTriangle } from "lucide-react";
 import { EnvBanner } from "@/components/EnvBanner";
 import { VisitsView } from "./VisitsView";
 import { FlowView } from "./FlowView";
 import { SequenceView } from "./SequenceView";
-import { PATHS, ELEMENTS } from "./seed";
 import { ELEMENT_TYPE_LABEL } from "@/lib/journey-model";
+import { useActiveStudy } from "@/lib/active-study";
 
 type Mode = "visits" | "flow" | "sequence";
 
@@ -19,31 +19,48 @@ const TABS: { id: Mode; label: string; icon: typeof Grid3X3; bestFor: string }[]
 
 export function JourneyPageClient() {
   const [mode, setMode] = useState<Mode>("flow");
+  const study = useActiveStudy();
+  const { identity, paths, elements, edges, visitColumns } = study;
 
-  const milestones = ELEMENTS.filter((e) => e.element_type === "milestone");
-  const elementCounts = ELEMENTS.reduce<Record<string, number>>((acc, el) => {
+  const milestones = elements.filter((e) => e.element_type === "milestone");
+  const elementCounts = elements.reduce<Record<string, number>>((acc, el) => {
     acc[el.element_type] = (acc[el.element_type] ?? 0) + 1;
     return acc;
   }, {});
+
+  const inferred = identity.dataSource !== "real";
 
   return (
     <>
       <div className="page-header">
         <h1>Journey · Workflow Authoring</h1>
         <p className="lede">
-          Three projections of the <strong>same canonical workflow</strong>. Switching views does
+          Three projections of the <strong>same canonical workflow</strong> for{" "}
+          <strong style={{ color: "var(--accent)" }}>{identity.code}</strong>. Switching views does
           not migrate or transform data — the saved Study Version is identical regardless of which
-          view authored it. No new entities; all primitives map to §4 Journey Elements + Tag
-          Assignment Rules.
+          view authored it.
         </p>
-        <span className="source-tag">PRD #12 v0.8 §4.5 · visual concepts borrowed from Cohort-Workflow-Optimization · model from Kelly Ritch 2026-06-04</span>
+        <span className="source-tag">{identity.sourceCitation}</span>
       </div>
+
+      {inferred ? (
+        <div className="card" style={{ marginBottom: 18, borderLeft: "3px solid var(--amber)" }}>
+          <div className="card-body" style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: 14 }}>
+            <AlertTriangle size={16} color="var(--amber)" style={{ marginTop: 2, flexShrink: 0 }} />
+            <div>
+              <div style={{ fontWeight: 700, color: "var(--amber)", fontSize: 12.5 }}>
+                {identity.dataSource === "icf_only" ? "ICF-only fixture" : "Inferred fixture"}
+              </div>
+              <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
+                {identity.dataNote}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <EnvBanner />
 
-      {/* -------------------------------------------------------------------
-          Paths + element-type summary
-          ------------------------------------------------------------------- */}
       <div className="grid-2" style={{ marginBottom: 22 }}>
         <div className="card">
           <div className="card-header">
@@ -55,11 +72,11 @@ export function JourneyPageClient() {
               <thead>
                 <tr>
                   <th>Path</th>
-                  <th style={{ width: 130 }}>Applies to</th>
+                  <th style={{ width: 160 }}>Applies to</th>
                 </tr>
               </thead>
               <tbody>
-                {PATHS.map((p) => (
+                {paths.map((p) => (
                   <tr key={p.id}>
                     <td>
                       <div style={{ fontWeight: 600 }}>{p.name}</div>
@@ -79,23 +96,29 @@ export function JourneyPageClient() {
             <span className="sub">§4.5.3 — first-class visual primitives; builder-named per §3.5</span>
           </div>
           <div className="card-body">
-            <div className="stack" style={{ gap: 8 }}>
-              {milestones.map((m) => (
-                <div key={m.id} style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "8px 12px",
-                  border: "1px solid var(--accent)",
-                  borderRadius: 999,
-                  background: "var(--accent-soft)",
-                }}>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--accent)" }} />
-                  <span style={{ fontWeight: 600, color: "var(--accent)" }}>{m.builder_label}</span>
-                  {m.notes ? <span className="muted" style={{ fontSize: 11, marginLeft: "auto" }}>{m.notes}</span> : null}
-                </div>
-              ))}
-            </div>
+            {milestones.length === 0 ? (
+              <div className="muted" style={{ fontSize: 12, fontStyle: "italic" }}>
+                This study has no milestones — pure cadence-driven follow-up.
+              </div>
+            ) : (
+              <div className="stack" style={{ gap: 8 }}>
+                {milestones.map((m) => (
+                  <div key={m.id} style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "8px 12px",
+                    border: "1px solid var(--accent)",
+                    borderRadius: 999,
+                    background: "var(--accent-soft)",
+                  }}>
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--accent)" }} />
+                    <span style={{ fontWeight: 600, color: "var(--accent)" }}>{m.builder_label}</span>
+                    {m.notes ? <span className="muted" style={{ fontSize: 11, marginLeft: "auto" }}>{m.notes}</span> : null}
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="divider" />
             <div className="row wrap" style={{ gap: 6, fontSize: 11 }}>
               {Object.entries(elementCounts).map(([type, n]) => (
@@ -108,9 +131,6 @@ export function JourneyPageClient() {
         </div>
       </div>
 
-      {/* -------------------------------------------------------------------
-          View-mode tabs
-          ------------------------------------------------------------------- */}
       <div className="card" style={{ marginBottom: 22 }}>
         <div style={{ display: "flex", borderBottom: "1px solid var(--border-subtle)" }}>
           {TABS.map(({ id, label, icon: Icon, bestFor }) => {
@@ -142,9 +162,9 @@ export function JourneyPageClient() {
         </div>
       </div>
 
-      {mode === "visits"   ? <VisitsView />   : null}
-      {mode === "flow"     ? <FlowView />     : null}
-      {mode === "sequence" ? <SequenceView /> : null}
+      {mode === "visits"   ? <VisitsView   elements={elements} visitColumns={visitColumns} /> : null}
+      {mode === "flow"     ? <FlowView     elements={elements} edges={edges} /> : null}
+      {mode === "sequence" ? <SequenceView elements={elements} edges={edges} /> : null}
 
       <div className="muted" style={{ fontSize: 11, marginTop: 28, padding: 16, background: "var(--bg-muted)", borderRadius: "var(--r-md)", lineHeight: 1.7 }}>
         <strong style={{ color: "var(--fg-secondary)" }}>What this surface does NOT change (§4.5.5):</strong>{" "}

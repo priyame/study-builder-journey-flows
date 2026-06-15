@@ -1,25 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { ELEMENTS, EDGES } from "./seed";
 import { ELEMENT_TYPE_LABEL, TRIGGER_FAMILY_LABEL } from "@/lib/journey-model";
+import type { JourneyElement, JourneyEdge } from "@/lib/journey-model";
 
 // §4.5 Sequence view — one Journey Element in focus at a time, prev/next nav.
-// Best-fit role: detail authoring + accessibility-first review.
-// R1.1 will add full drag-and-drop reordering — R1.0 ships read-equivalent.
+// Read-equivalent in R1.0; R1.1 adds full drag-and-drop reordering.
 
-const VISIBLE = ELEMENTS.filter((e) => e.element_type !== "end_state");
-
-export function SequenceView() {
+export function SequenceView({
+  elements,
+  edges,
+}: {
+  elements: JourneyElement[];
+  edges: JourneyEdge[];
+}) {
+  const visible = elements.filter((e) => e.element_type !== "end_state");
   const [idx, setIdx] = useState(0);
-  const el = VISIBLE[idx];
-  const prev = idx > 0 ? VISIBLE[idx - 1] : null;
-  const next = idx < VISIBLE.length - 1 ? VISIBLE[idx + 1] : null;
+
+  // Reset focus when the study changes (visible list identity changes).
+  useEffect(() => { setIdx(0); }, [visible.length, visible[0]?.id]);
+
+  if (visible.length === 0) {
+    return (
+      <div className="card">
+        <div className="card-body" style={{ padding: 24 }}>
+          <div className="muted">No journey elements to display.</div>
+        </div>
+      </div>
+    );
+  }
+
+  const el = visible[idx];
+  const prev = idx > 0 ? visible[idx - 1] : null;
+  const next = idx < visible.length - 1 ? visible[idx + 1] : null;
   const isMilestone = el.element_type === "milestone";
 
-  const incoming = EDGES.filter((e) => e.to === el.id);
-  const outgoing = EDGES.filter((e) => e.from === el.id);
+  const incoming = edges.filter((e) => e.to === el.id);
+  const outgoing = edges.filter((e) => e.from === el.id);
 
   return (
     <div className="stack" style={{ gap: 18 }}>
@@ -27,7 +45,7 @@ export function SequenceView() {
       <div className="card">
         <div className="card-body" style={{ padding: "14px 18px", overflowX: "auto" }}>
           <div style={{ display: "flex", gap: 6, alignItems: "center", minWidth: 1000 }}>
-            {VISIBLE.map((e, i) => {
+            {visible.map((e, i) => {
               const active = i === idx;
               const passed = i < idx;
               const mile = e.element_type === "milestone";
@@ -42,6 +60,7 @@ export function SequenceView() {
                     display: "flex",
                     alignItems: "center",
                     gap: 6,
+                    cursor: "pointer",
                   }}
                 >
                   <div style={{
@@ -49,7 +68,7 @@ export function SequenceView() {
                     height: mile ? 22 : 18,
                     borderRadius: mile ? "50%" : 4,
                     background: active
-                      ? (mile ? "var(--accent)" : "var(--accent)")
+                      ? "var(--accent)"
                       : passed
                         ? "var(--accent-soft)"
                         : "var(--bg-muted)",
@@ -65,7 +84,7 @@ export function SequenceView() {
                   }}>
                     {e.builder_label}
                   </span>
-                  {i < VISIBLE.length - 1 ? (
+                  {i < visible.length - 1 ? (
                     <div style={{ width: 18, height: 1, background: passed ? "var(--accent)" : "var(--border-strong)" }} />
                   ) : null}
                 </button>
@@ -87,7 +106,7 @@ export function SequenceView() {
               fontWeight: 600,
               marginBottom: 4,
             }}>
-              Step {idx + 1} of {VISIBLE.length} · {ELEMENT_TYPE_LABEL[el.element_type]}
+              Step {idx + 1} of {visible.length} · {ELEMENT_TYPE_LABEL[el.element_type]}
               {isMilestone ? <span style={{ marginLeft: 8, color: "var(--accent)" }}>· Milestone</span> : null}
             </div>
             <h2 style={{ color: isMilestone ? "var(--accent)" : undefined }}>{el.builder_label}</h2>
@@ -156,7 +175,6 @@ export function SequenceView() {
 
           <div className="divider" />
 
-          {/* Block steps — visual decomposition only in R1.0 (§4.5.4) */}
           <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>
             Block steps {el.activities.length === 0 ? <span className="muted" style={{ fontWeight: 400, marginLeft: 6 }}>(none — milestone has no activities)</span> : null}
           </div>
@@ -173,7 +191,6 @@ export function SequenceView() {
 
           <div className="divider" />
 
-          {/* Adjacent edges — transitions in & out */}
           <div className="grid-2">
             <div>
               <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>← Incoming transitions</div>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useActiveStudy } from "@/lib/active-study";
 
 // Pooja+Ana 2026-06-10 — enrollment trigger is configurable per study.
 // Different sponsors define "enrolled" differently; the dashboard count must reflect THIS study's definition.
@@ -14,8 +15,13 @@ const PRESETS = [
 ];
 
 export function EnrollmentDefBuilder() {
-  const [trigger, setTrigger] = useState("randomized");
+  const study = useActiveStudy();
+  const [trigger, setTrigger] = useState<string>(study.enrollmentDefinition.trigger);
   const [custom, setCustom] = useState("subject.eligibility = true AND subject.first_dose_at IS NOT NULL");
+
+  useEffect(() => {
+    setTrigger(study.enrollmentDefinition.trigger);
+  }, [study.identity.id, study.enrollmentDefinition.trigger]);
 
   return (
     <div className="card">

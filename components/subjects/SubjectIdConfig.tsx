@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useActiveStudy } from "@/lib/active-study";
 
 // NFR-016 — configurable Subject ID structure. The pattern uses tokens that the engine resolves:
 //   {site} — assigned site code (e.g., 001)
@@ -23,18 +24,26 @@ const TOKEN_DOCS = [
   { token: "{study}",    desc: "Study short code" },
 ];
 
-function renderExample(pattern: string): string {
+function renderExample(pattern: string, studyCode: string): string {
   return pattern
-    .replace(/{study}/g, "ARGO")
+    .replace(/{study}/g, studyCode)
     .replace(/{country}/g, "US")
+    .replace(/{site:(\d+)}/g, (_, n) => String(14).padStart(Number(n), "0"))
     .replace(/{site}/g, "001")
     .replace(/{seq:(\d+)}/g, (_, n) => String(42).padStart(Number(n), "0"))
     .replace(/{seq}/g, "42");
 }
 
 export function SubjectIdConfig() {
-  const [pattern, setPattern] = useState("{site}-{seq:4}");
-  const [scope, setScope] = useState<"study" | "site" | "country">("site");
+  const study = useActiveStudy();
+  const [pattern, setPattern] = useState(study.subjectId.pattern);
+  const [scope, setScope] = useState<"study" | "site" | "country">(study.subjectId.sequence_scope);
+
+  // Reset when the study switches so the editor shows the new study's pattern.
+  useEffect(() => {
+    setPattern(study.subjectId.pattern);
+    setScope(study.subjectId.sequence_scope);
+  }, [study.identity.id, study.subjectId.pattern, study.subjectId.sequence_scope]);
 
   return (
     <div className="card">
@@ -78,7 +87,7 @@ export function SubjectIdConfig() {
               borderRadius: "var(--r-md)",
               border: "1px solid var(--border-subtle)",
             }}>
-              {renderExample(pattern)}
+              {renderExample(pattern, study.identity.code)}
             </div>
             <div className="muted" style={{ fontSize: 11 }}>
               Next subject for site 001 will receive this ID. Sequence scope: <strong>{scope}</strong>.

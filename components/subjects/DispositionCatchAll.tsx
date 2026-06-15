@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useActiveStudy } from "@/lib/active-study";
 
 // Pooja+Ana 2026-06-10 — disposition catalog is configurable; the catch-all bucket
 // ensures every subject can land somewhere even when none of the explicit reasons fit.
@@ -12,19 +13,14 @@ interface Disposition {
   is_catch_all?: boolean;
 }
 
-const SEED_DISPOSITIONS: Disposition[] = [
-  { id: "active",          label: "Active" },
-  { id: "completed",       label: "Completed" },
-  { id: "withdrew_consent", label: "Withdrew consent",      is_terminal: true },
-  { id: "lost_to_followup", label: "Lost to follow-up",     is_terminal: true },
-  { id: "death",           label: "Death",                  is_terminal: true },
-  { id: "ae",              label: "Adverse event",          is_terminal: true },
-  { id: "other",           label: "Other (specify)",        is_catch_all: true, is_terminal: true },
-];
-
 export function DispositionCatchAll() {
-  const [dispositions, setDispositions] = useState(SEED_DISPOSITIONS);
+  const study = useActiveStudy();
+  const [dispositions, setDispositions] = useState<Disposition[]>(study.dispositions);
   const [draft, setDraft] = useState("");
+
+  useEffect(() => {
+    setDispositions(study.dispositions);
+  }, [study.identity.id, study.dispositions]);
 
   const add = () => {
     if (!draft.trim()) return;

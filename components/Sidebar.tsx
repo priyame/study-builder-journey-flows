@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Tag, GitBranch, Users, FileDown, Home, GitFork, type LucideIcon } from "lucide-react";
 
 interface NavItem {
@@ -30,6 +30,9 @@ const NAV: { title: string; items: NavItem[] }[] = [
 
 export function Sidebar() {
   const pathname = usePathname() ?? "";
+  const params = useSearchParams();
+  const studyParam = params.get("study");
+  const qs = studyParam ? `?study=${studyParam}` : "";
 
   return (
     <nav className="sidebar">
@@ -41,7 +44,7 @@ export function Sidebar() {
             return (
               <Link
                 key={href}
-                href={href}
+                href={`${href}${qs}`}
                 className={`nav-link${active ? " active" : ""}`}
               >
                 <Icon size={15} strokeWidth={1.8} />

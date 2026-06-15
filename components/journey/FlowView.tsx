@@ -1,22 +1,12 @@
 "use client";
 
-import { ELEMENTS, EDGES } from "./seed";
 import { TRIGGER_FAMILY_LABEL, ELEMENT_TYPE_LABEL } from "@/lib/journey-model";
-import type { JourneyElement, TriggerFamily } from "@/lib/journey-model";
+import type { JourneyElement, JourneyEdge, TriggerFamily } from "@/lib/journey-model";
 
 // §4.5 Flow view — visual graph projection over Journey Elements + Edges.
-// Milestones are enlarged nodes; scheduled elements are standard nodes;
-// branches render as a fork with two parallel lanes (TRTA / SoC) that converge at EoT.
-
-// Layout buckets — rendered as columns from left to right.
-const LANES: { id: string; label: string; elementIds: string[] }[] = [
-  { id: "pre",   label: "Pre-randomization",    elementIds: ["el-consent", "el-screen", "el-ms-screen-complete", "el-enroll", "el-ms-rand"] },
-  { id: "trta",  label: "Treatment A branch",   elementIds: ["el-trta-d1", "el-trta-d8", "el-trta-d29"] },
-  { id: "soc",   label: "Standard of Care branch", elementIds: ["el-soc-d1", "el-soc-d29"] },
-  { id: "post",  label: "Convergent + follow-up", elementIds: ["el-ms-eot", "el-followup"] },
-  { id: "side",  label: "Cross-cutting",         elementIds: ["el-ae", "el-hr-extra"] },
-  { id: "end",   label: "End states",            elementIds: ["el-end-complete", "el-end-withdrawn"] },
-];
+// Adaptive layout: groups elements by applies_to_expr so branched arms become
+// parallel lanes, ALL=ALL paths render linearly, cadence/event overlays sit
+// in a cross-cutting strip at the bottom. Works for every study fixture.
 
 const FAMILY_STYLE: Record<TriggerFamily, { bg: string; border: string; fg: string; dashed?: boolean }> = {
   auto:        { bg: "var(--accent-soft)", border: "var(--accent)",  fg: "var(--accent)" },
@@ -35,7 +25,7 @@ function NodeCard({ el }: { el: JourneyElement }) {
         borderRadius: isMilestone ? "999px" : "var(--r-md)",
         background: isMilestone ? "var(--accent-soft)" : isEndState ? "var(--bg-muted)" : "var(--bg-surface)",
         padding: isMilestone ? "10px 16px" : "10px 12px",
-        minWidth: 160,
+        minWidth: 170,
         boxShadow: isMilestone ? "var(--shadow-pop)" : "var(--shadow-card)",
         position: "relative",
       }}
@@ -52,7 +42,7 @@ function NodeCard({ el }: { el: JourneyElement }) {
       </div>
       <div style={{
         fontWeight: isMilestone ? 700 : 600,
-        fontSize: isMilestone ? 13 : 12.5,
+        fontSize: isMilestone ? 12.5 : 12,
         color: isMilestone ? "var(--accent)" : "var(--fg-primary)",
         lineHeight: 1.3,
       }}>
@@ -81,147 +71,179 @@ function NodeCard({ el }: { el: JourneyElement }) {
   );
 }
 
-function EdgeChips({ fromId }: { fromId: string }) {
-  const edges = EDGES.filter((e) => e.from === fromId);
-  if (edges.length === 0) return null;
+function EdgeChip({ edge }: { edge: JourneyEdge }) {
+  const style = FAMILY_STYLE[edge.trigger_family];
   return (
-    <div className="stack" style={{ gap: 4, alignItems: "center", padding: "4px 0" }}>
-      {edges.map((e, i) => {
-        const style = FAMILY_STYLE[e.trigger_family];
-        return (
-          <div
-            key={i}
-            style={{
-              fontSize: 10,
-              padding: "3px 8px",
-              borderRadius: 999,
-              background: style.bg,
-              color: style.fg,
-              border: `1px ${style.dashed ? "dashed" : "solid"} ${style.border}`,
-              maxWidth: 200,
-              textAlign: "center",
-              lineHeight: 1.3,
-            }}
-          >
-            <span style={{ fontWeight: 600, marginRight: 4 }}>{TRIGGER_FAMILY_LABEL[e.trigger_family]}:</span>
-            {e.trigger_label}
-            {e.is_branch ? <span style={{ marginLeft: 4, opacity: 0.7 }}>· branch</span> : null}
-          </div>
-        );
-      })}
+    <div
+      style={{
+        fontSize: 10,
+        padding: "3px 8px",
+        borderRadius: 999,
+        background: style.bg,
+        color: style.fg,
+        border: `1px ${style.dashed ? "dashed" : "solid"} ${style.border}`,
+        maxWidth: 220,
+        textAlign: "center",
+        lineHeight: 1.3,
+        whiteSpace: "normal",
+      }}
+    >
+      <span style={{ fontWeight: 600, marginRight: 4 }}>{TRIGGER_FAMILY_LABEL[edge.trigger_family]}:</span>
+      {edge.trigger_label}
+      {edge.is_branch ? <span style={{ marginLeft: 4, opacity: 0.7 }}>· branch</span> : null}
     </div>
   );
 }
 
-export function FlowView() {
-  const byId = Object.fromEntries(ELEMENTS.map((e) => [e.id, e]));
+// Group elements by their applies_to_expr. ALL=ALL goes into "main"; everything
+// else gets its own lane keyed by the expression. End states + cross-cutting
+// (cadence_followup, event_triggered, safety_followup) get separate buckets.
+function bucketize(elements: JourneyElement[]) {
+  const main: JourneyElement[] = [];
+  const lanes = new Map<string, JourneyElement[]>();
+  const overlay: JourneyElement[] = [];
+  const ends: JourneyElement[] = [];
+
+  for (const el of elements) {
+    if (el.element_type === "end_state") {
+      ends.push(el);
+      continue;
+    }
+    if (
+      el.element_type === "cadence_followup" ||
+      el.element_type === "event_triggered" ||
+      el.element_type === "safety_followup"
+    ) {
+      overlay.push(el);
+      continue;
+    }
+    const expr = el.applies_to_expr ?? "ALL=ALL";
+    if (expr === "ALL=ALL") {
+      main.push(expr === "ALL=ALL" ? el : el);
+    } else {
+      const list = lanes.get(expr) ?? [];
+      list.push(el);
+      lanes.set(expr, list);
+    }
+  }
+
+  // Stable order within each bucket: by day_offset then by element id
+  const byOffset = (a: JourneyElement, b: JourneyElement) =>
+    (a.day_offset ?? -Infinity) - (b.day_offset ?? -Infinity);
+  main.sort(byOffset);
+  for (const list of lanes.values()) list.sort(byOffset);
+
+  return { main, lanes: Array.from(lanes.entries()), overlay, ends };
+}
+
+export function FlowView({ elements, edges }: { elements: JourneyElement[]; edges: JourneyEdge[] }) {
+  const byId = Object.fromEntries(elements.map((e) => [e.id, e]));
+  const outgoing = (id: string) => edges.filter((e) => e.from === id);
+  const { main, lanes, overlay, ends } = bucketize(elements);
 
   return (
     <div className="stack" style={{ gap: 18 }}>
       <div className="card">
         <div className="card-header">
           <h2>Workflow graph</h2>
-          <span className="sub">Milestones as enlarged nodes · edge chips show trigger family · branch on ARM tag</span>
+          <span className="sub">
+            Milestones as enlarged nodes · ARM-conditioned paths render as parallel lanes · cross-cutting elements ride along the bottom
+          </span>
         </div>
         <div className="card-body" style={{ overflowX: "auto" }}>
-          {/* Pre-randomization: linear left-to-right */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 28, minWidth: 1100 }}>
-            {LANES[0].elementIds.map((id, i) => (
-              <div key={id} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                <NodeCard el={byId[id]} />
-                {i < LANES[0].elementIds.length - 1 ? (
-                  <div style={{ minWidth: 130 }}>
-                    <EdgeChips fromId={id} />
+          {/* Main (ALL=ALL) flow — linear, left-to-right by day_offset */}
+          <div style={{ minWidth: 1100 }}>
+            <div className="muted" style={{ fontSize: 11, fontWeight: 700, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              Main flow — all participants
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 24, flexWrap: "wrap" }}>
+              {main.map((el, i) => {
+                const outs = outgoing(el.id).filter((e) => byId[e.to] && !ends.find((x) => x.id === e.to));
+                return (
+                  <div key={el.id} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <NodeCard el={el} />
+                    {i < main.length - 1 && outs.length > 0 ? (
+                      <div className="stack" style={{ gap: 4, minWidth: 120, alignItems: "center" }}>
+                        {outs.slice(0, 2).map((e, j) => <EdgeChip key={j} edge={e} />)}
+                      </div>
+                    ) : null}
                   </div>
-                ) : null}
-              </div>
-            ))}
-          </div>
-
-          {/* Branch decision label */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-            <div style={{
-              width: 0, height: 0,
-              borderLeft: "10px solid transparent",
-              borderRight: "10px solid transparent",
-              borderTop: "16px solid var(--accent)",
-              marginLeft: 360,
-            }} />
-            <div className="muted" style={{ fontSize: 12, fontStyle: "italic" }}>
-              Decision: route by Randomization Arm tag (set by IRT message at the Randomization milestone)
+                );
+              })}
             </div>
           </div>
 
-          {/* Branch: two lanes side-by-side */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginBottom: 24, minWidth: 1100 }}>
-            {/* TRTA lane */}
-            <div style={{
-              padding: 14,
-              borderLeft: "3px solid var(--accent)",
-              background: "linear-gradient(90deg, var(--accent-soft) 0%, transparent 100%)",
-              borderRadius: "var(--r-md)",
-            }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--accent)", marginBottom: 8 }}>
-                {LANES[1].label} · <span className="code">ARM=TRTA</span>
+          {/* Branched lanes — one per applies_to_expr */}
+          {lanes.length > 0 ? (
+            <>
+              <div className="muted" style={{ fontSize: 11, fontWeight: 700, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                Conditional lanes ({lanes.length})
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "nowrap" }}>
-                {LANES[1].elementIds.map((id, i) => (
-                  <div key={id} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                    <NodeCard el={byId[id]} />
-                    {i < LANES[1].elementIds.length - 1 ? <div style={{ minWidth: 90 }}><EdgeChips fromId={id} /></div> : null}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* SoC lane */}
-            <div style={{
-              padding: 14,
-              borderLeft: "3px solid var(--slate)",
-              background: "linear-gradient(90deg, var(--bg-muted) 0%, transparent 100%)",
-              borderRadius: "var(--r-md)",
-            }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--slate)", marginBottom: 8 }}>
-                {LANES[2].label} · <span className="code">ARM=SOC</span>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "nowrap" }}>
-                {LANES[2].elementIds.map((id, i) => (
-                  <div key={id} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                    <NodeCard el={byId[id]} />
-                    {i < LANES[2].elementIds.length - 1 ? <div style={{ minWidth: 90 }}><EdgeChips fromId={id} /></div> : null}
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: lanes.length === 1 ? "1fr" : lanes.length === 2 ? "1fr 1fr" : "repeat(auto-fit, minmax(380px, 1fr))",
+                gap: 16,
+                marginBottom: 24,
+              }}>
+                {lanes.map(([expr, list], idx) => (
+                  <div key={expr} style={{
+                    padding: 12,
+                    borderLeft: `3px solid ${idx % 2 === 0 ? "var(--accent)" : "var(--slate)"}`,
+                    background: idx % 2 === 0
+                      ? "linear-gradient(90deg, var(--accent-soft) 0%, transparent 100%)"
+                      : "linear-gradient(90deg, var(--bg-muted) 0%, transparent 100%)",
+                    borderRadius: "var(--r-md)",
+                  }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: idx % 2 === 0 ? "var(--accent)" : "var(--slate)", marginBottom: 8 }}>
+                      <span className="code">{expr}</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
+                      {list.map((el, i) => (
+                        <div key={el.id} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                          <NodeCard el={el} />
+                          {i < list.length - 1 ? (
+                            <div className="stack" style={{ gap: 4, minWidth: 90, alignItems: "center" }}>
+                              {outgoing(el.id).slice(0, 1).map((e, j) => <EdgeChip key={j} edge={e} />)}
+                            </div>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
-            </div>
-          </div>
-
-          {/* Convergent: EoT milestone + follow-up cadence */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24, minWidth: 800 }}>
-            <div className="muted" style={{ fontSize: 11, fontStyle: "italic", maxWidth: 120 }}>Branches converge →</div>
-            {LANES[3].elementIds.map((id, i) => (
-              <div key={id} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                <NodeCard el={byId[id]} />
-                {i < LANES[3].elementIds.length - 1 ? <div style={{ minWidth: 130 }}><EdgeChips fromId={id} /></div> : null}
-              </div>
-            ))}
-            <div style={{ minWidth: 130 }}><EdgeChips fromId="el-followup" /></div>
-            <NodeCard el={byId["el-end-complete"]} />
-          </div>
+            </>
+          ) : null}
 
           {/* Cross-cutting overlay */}
-          <div style={{ display: "flex", gap: 16, paddingTop: 16, borderTop: "1px dashed var(--border-strong)" }}>
-            <div className="muted" style={{ fontSize: 11, fontStyle: "italic", maxWidth: 140, alignSelf: "center" }}>
-              Cross-cutting overlays (apply across the journey based on tag expression):
+          {overlay.length > 0 ? (
+            <>
+              <div style={{ paddingTop: 16, borderTop: "1px dashed var(--border-strong)" }}>
+                <div className="muted" style={{ fontSize: 11, fontWeight: 700, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  Cross-cutting overlays — apply across the journey based on tag expression
+                </div>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  {overlay.map((el) => (
+                    <NodeCard key={el.id} el={el} />
+                  ))}
+                </div>
+              </div>
+            </>
+          ) : null}
+
+          {/* End states */}
+          {ends.length > 0 ? (
+            <div style={{ marginTop: 18, paddingTop: 16, borderTop: "1px dashed var(--border-strong)" }}>
+              <div className="muted" style={{ fontSize: 11, fontWeight: 700, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                Terminal end states
+              </div>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                {ends.map((el) => (
+                  <NodeCard key={el.id} el={el} />
+                ))}
+              </div>
             </div>
-            {LANES[4].elementIds.map((id) => (
-              <NodeCard key={id} el={byId[id]} />
-            ))}
-            <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
-              <span className="muted" style={{ fontSize: 11 }}>Manual exit:</span>
-              <EdgeChips fromId="el-enroll" />
-              <NodeCard el={byId["el-end-withdrawn"]} />
-            </div>
-          </div>
+          ) : null}
         </div>
       </div>
 
@@ -245,7 +267,7 @@ export function FlowView() {
               <tr>
                 <td><span className="chip blue">Auto</span></td>
                 <td><span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 999, background: "var(--accent-soft)", color: "var(--accent)", border: "1px solid var(--accent)" }}>Eligibility met</span></td>
-                <td><span className="code">form_answer · state_transition · event_trigger · irt_message · conditional</span></td>
+                <td><span className="code">form_answer · state_transition · event_trigger · irt_message</span></td>
                 <td>&quot;When X happens, apply tag Y&quot; composer</td>
               </tr>
               <tr>
