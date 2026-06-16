@@ -318,4 +318,51 @@ export const PEVD: StudyFixture = {
     { subject_id: "PEVD-01-004", ARM: "WAIT", CYCLE_PHASE: "MENSES",     CROSSOVER: "XO_EMBO", ITT: "ITT", DISPOSITION: "Crossed over" },
     { subject_id: "PEVD-02-009", ARM: "WAIT", CYCLE_PHASE: "POST_MENO",  CROSSOVER: "NO_XO",   ITT: "ITT", DISPOSITION: "Completed 12 months" },
   ],
+
+  sources: [
+    { filename: "BRANY Approved- PeVD Protocol _ 30MAY2025_clean.pdf", kind: "protocol", status: "extracted",
+      contributes_to: ["identity", "tagCategories", "elements", "paths"],
+      note: "BRANY-approved clean copy — current Protocol v.12." },
+    { filename: "PeVD Protocol 12122022.docx", kind: "amendment", status: "extracted",
+      contributes_to: ["versions"],
+      note: "Earlier protocol version (12 Dec 2022) — pre-BRANY approval." },
+  ],
+
+  provenance: {
+    "identity.sponsor": {
+      source: "BRANY Approved- PeVD Protocol _ 30MAY2025_clean.pdf",
+      page: 1,
+      quote: "Foundation for Venous and Lymphatic Medicine.",
+    },
+    "identity.indication": {
+      source: "BRANY Approved- PeVD Protocol _ 30MAY2025_clean.pdf",
+      page: 1,
+      quote: "Chronic pelvic pain attributed to pelvic venous disorder (pelvic varices).",
+    },
+    "identity.phase": {
+      source: "BRANY Approved- PeVD Protocol _ 30MAY2025_clean.pdf",
+      page: 2,
+      quote: "Phase 2, randomized, placebo-controlled (sham/wait-list).",
+    },
+    "identity.enrollmentTarget": {
+      source: "BRANY Approved- PeVD Protocol _ 30MAY2025_clean.pdf",
+      page: 2,
+      quote: "N=40 participants (20 per arm); approximately 5 study sites.",
+    },
+    "tags.armCategory": {
+      source: "BRANY Approved- PeVD Protocol _ 30MAY2025_clean.pdf",
+      page: 8,
+      quote: "1:1 randomization at Day 1 procedure: bilateral ovarian vein embolization vs. conservative care (wait-list control).",
+    },
+    "elements.runIn": {
+      source: "BRANY Approved- PeVD Protocol _ 30MAY2025_clean.pdf",
+      page: 8,
+      quote: "Weekly assessments × 4 weeks pre-treatment to establish baseline severity, capture cyclical variation, and validate the novel PROM.",
+    },
+    "elements.crossover": {
+      source: "BRANY Approved- PeVD Protocol _ 30MAY2025_clean.pdf",
+      page: 9,
+      quote: "Wait-list control participants may elect bilateral OV embolization after their 6-month primary endpoint visit.",
+    },
+  },
 };

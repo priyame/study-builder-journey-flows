@@ -371,4 +371,43 @@ export const LEUKREG: StudyFixture = {
     { subject_id: "MGH-LR-001237", DISEASE: "AML",     LINE: "L2",    MODALITY: "BMT",          STATUS: "RELAPSE", TRIAL: "NO_TRIAL", DISPOSITION: "Active in registry" },
     { subject_id: "MGH-LR-002104", DISEASE: "MDS",     LINE: "L0",    MODALITY: "WATCH",        STATUS: "SD",      TRIAL: "NO_TRIAL", DISPOSITION: "Active in registry" },
   ],
+
+  sources: [
+    { filename: "LeukReg study protocol.pdf", kind: "protocol", status: "extracted",
+      contributes_to: ["identity", "tagCategories", "elements", "paths", "dispositions"],
+      note: "MGH Leukemia Program protocol; PI Dr. Amir T. Fathi." },
+  ],
+
+  provenance: {
+    "identity.sponsor": {
+      source: "LeukReg study protocol.pdf",
+      page: 1,
+      quote: "Massachusetts General Hospital · Leukemia Program. PI: Dr. Amir T. Fathi.",
+    },
+    "identity.indication": {
+      source: "LeukReg study protocol.pdf",
+      page: 1,
+      quote: "Acute and chronic leukemia and related hematologic malignancies (e.g., myelodysplastic syndrome).",
+    },
+    "identity.archetype": {
+      source: "LeukReg study protocol.pdf",
+      page: 2,
+      quote: "Observational/retrospective registry — data collected from natural course of clinical care via chart review and EHR extraction (NOT interventional).",
+    },
+    "identity.duration": {
+      source: "LeukReg study protocol.pdf",
+      page: 1,
+      quote: "Longitudinal, ongoing — no defined endpoint. Continuous monitoring as per clinical care.",
+    },
+    "tags.diseaseCategory": {
+      source: "LeukReg study protocol.pdf",
+      page: 9,
+      quote: "Cohorts emerge from disease subtype (AML, ALL, CML, CLL, MDS, MPN), treatment line, modality received, and disease status (active, remission, relapse, transformed, refractory).",
+    },
+    "elements.eventDriven": {
+      source: "LeukReg study protocol.pdf",
+      page: 9,
+      quote: "All clinical encounters, appointments, and services documented. Visits, labs, imaging triggered by clinical need; data collection is event-driven, not on a fixed schedule.",
+    },
+  },
 };

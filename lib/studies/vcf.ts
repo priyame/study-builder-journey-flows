@@ -173,4 +173,25 @@ export const VCF: StudyFixture = {
     { subject_id: "VCF-001-00004", INDICATION: "DVT_NOAC",   FILTER_TYPE: "PERMANENT",   RETRIEVAL: "PERM",          COMPLICATION: "MIGRATION",  DISPOSITION: "Active in registry" },
     { subject_id: "VCF-012-00018", INDICATION: "TRAUMA",     FILTER_TYPE: "RETRIEVABLE", RETRIEVAL: "FAILED_RETR",   COMPLICATION: "FRACTURE",   DISPOSITION: "Active in registry" },
   ],
+
+  sources: [
+    { filename: "ICF CLEAN - VCF Registry (V1.3, 7.31.2023).pdf", kind: "icf", status: "icf_only",
+      contributes_to: [],
+      note: "Only the participant ICF is in the source pack — no protocol. Identity / journey / tags below are inferred from the ICF summary and standard VCF registry practice." },
+  ],
+
+  provenance: {
+    "identity.indication": {
+      source: "ICF CLEAN - VCF Registry (V1.3, 7.31.2023).pdf",
+      quote: "Vena Cava Filter management — patients with PE prophylaxis, DVT with anticoagulation contraindication, or trauma prophylaxis. (Inferred from ICF text.)",
+    },
+    "identity.archetype": {
+      source: "ICF CLEAN - VCF Registry (V1.3, 7.31.2023).pdf",
+      quote: "Observational registry; standard VCF registries enroll at placement and follow longitudinally for 5+ years with periodic retrieval candidacy review.",
+    },
+    "tags.filterType": {
+      source: "ICF CLEAN - VCF Registry (V1.3, 7.31.2023).pdf",
+      quote: "Inferred — filter model (permanent, retrievable, convertible) is the central exposure of any VCF registry.",
+    },
+  },
 };

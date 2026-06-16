@@ -451,4 +451,65 @@ export const LANTERN: StudyFixture = {
     { subject_id: "US-001-0014", ARM: "APDT", PERIOD: "P1", SURGERY: "ORTHO",   MICRO: "NONE",       SSI: "CONFIRMED",  ITT: "ITT", DISPOSITION: "Completed" },
     { subject_id: "US-014-0007", ARM: "SOC",  PERIOD: "P1", SURGERY: "VASCULAR", MICRO: "NONE",      SSI: "NO_SSI",     ITT: "ITT", DISPOSITION: "Withdrew consent" },
   ],
+
+  sources: [
+    { filename: "20250416_LANTERN_Protocol_V3.0.docx", kind: "protocol", status: "extracted",
+      contributes_to: ["identity", "tagCategories", "elements", "paths"],
+      note: "Authoritative — Protocol V3.0 (16 April 2025)." },
+    { filename: "20260227_LANTERN_Crossover Plan_V3.pdf", kind: "crossover_plan", status: "extracted",
+      contributes_to: ["paths", "elements", "tagCategories"],
+      note: "Operationalizes Period 1 → Crossover → Period 2 transitions." },
+    { filename: "SSI-004 CLA-0005.01 Clinical Safety Plan v4.0 27 May 2026_el.docx", kind: "safety_plan", status: "extracted",
+      contributes_to: ["dispositions", "tagRules"],
+      note: "Governs SRC/DMC/EAC responsibilities; AE collection windows." },
+    { filename: "Review Outcome_Rhode Island_Protocol Amendment v2.0_31July2023.pdf", kind: "amendment", status: "amendment",
+      contributes_to: ["versions"],
+      note: "Site-specific IRB review outcome — predates V3.0." },
+    { filename: "LANTERN SSI-004 Close Out Tracker.xlsx", kind: "tracker", status: "operational",
+      contributes_to: [],
+      note: "Sponsor close-out tracker. Operational only — not parsed." },
+  ],
+
+  provenance: {
+    "identity.sponsor": {
+      source: "20250416_LANTERN_Protocol_V3.0.docx",
+      page: 1,
+      quote: "Ondine Biomedical Inc. (Vancouver, BC)",
+    },
+    "identity.indication": {
+      source: "20250416_LANTERN_Protocol_V3.0.docx",
+      page: 1,
+      quote: "Surgical Site Infection (SSI) prevention in acute care surgical patients undergoing major elective/urgent/emergency surgery with significant skin incision.",
+    },
+    "identity.phase": {
+      source: "20250416_LANTERN_Protocol_V3.0.docx",
+      page: 1,
+      quote: "Phase III. Group-randomized, standard-of-care-controlled, crossover trial.",
+    },
+    "identity.enrollmentTarget": {
+      source: "20250416_LANTERN_Protocol_V3.0.docx",
+      page: 2,
+      quote: "Enrollment target: 4,740 patients minimum (2,370 per arm accounting for 5% dropout); up to 30 hospital sites (US and Canada).",
+    },
+    "identity.archetype": {
+      source: "20260227_LANTERN_Crossover Plan_V3.pdf",
+      page: 1,
+      quote: "Sites are randomized 1:1 to begin either Treatment or SOC in Period 1. After Period 1 completion at ~50% enrollment, sites crossover with a 2–6 week inactive interval to enroll the opposite arm in Period 2, matching first-period enrollment ±10%.",
+    },
+    "tags.armCategory": {
+      source: "20250416_LANTERN_Protocol_V3.0.docx",
+      page: 7,
+      quote: "Treatment arm = Nasal Antimicrobial Photodisinfection Therapy (aPDT) + Standard-of-Care; Control arm = Standard-of-Care alone.",
+    },
+    "elements.day30Followup": {
+      source: "20250416_LANTERN_Protocol_V3.0.docx",
+      page: 18,
+      quote: "Visit 3 (Follow-up Phone Call) at Day 30 ± 4 days post-surgery; review for SSI symptoms, readmissions, late-onset SSI.",
+    },
+    "tags.substudy": {
+      source: "20250416_LANTERN_Protocol_V3.0.docx",
+      page: 12,
+      quote: "Nasal microbiota substudy — ~500 patients across 4–8 sites; separate informed consent; quantitative S. aureus pre- and post-aPDT.",
+    },
+  },
 };

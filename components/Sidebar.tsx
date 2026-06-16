@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Tag, GitBranch, Users, FileDown, Home, GitFork, type LucideIcon } from "lucide-react";
+import { Tag, GitBranch, Users, FileDown, Home, GitFork, Compass, type LucideIcon } from "lucide-react";
 
 interface NavItem {
   href: string;
@@ -17,7 +17,13 @@ const NAV: { title: string; items: NavItem[] }[] = [
     items: [{ href: "/", label: "Home", icon: Home }],
   },
   {
-    title: "Study Build",
+    title: "Study Setup",
+    items: [
+      { href: "/study",          label: "Setup wizard",       icon: Compass,   badge: "Story 1" },
+    ],
+  },
+  {
+    title: "Configuration",
     items: [
       { href: "/study/tags",     label: "Tags & Rules",       icon: Tag,       badge: "Kelly" },
       { href: "/study/journey",  label: "Journey",            icon: GitFork,   badge: "§4.5" },
@@ -40,7 +46,12 @@ export function Sidebar() {
         <div key={group.title}>
           <div className="section-title">{group.title}</div>
           {group.items.map(({ href, label, icon: Icon, badge }) => {
-            const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
+            // /study should match only the exact /study route — not /study/journey etc.,
+            // which belong to the Configuration group below.
+            const active =
+              href === "/" ? pathname === "/" :
+              href === "/study" ? pathname === "/study" :
+              pathname.startsWith(href);
             return (
               <Link
                 key={href}

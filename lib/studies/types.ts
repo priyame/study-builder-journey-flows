@@ -57,9 +57,45 @@ export interface StudyExportRow {
   [tagOrField: string]: string;
 }
 
+// A document in the study's source pack — the real file that landed in
+// References/Study Setup Source Docs. Drives the Input stage of the wizard.
+export interface SourceDoc {
+  filename: string;                    // exact filename in the source pack
+  kind: "protocol" | "amendment" | "icf" | "safety_plan" | "crossover_plan" | "tracker" | "other";
+  pageCount?: number;
+  status: "extracted" | "image_only" | "icf_only" | "operational" | "amendment";
+  // What the AI got from this doc — feeds the Review-stage profile fields.
+  contributes_to: string[];            // identity field names this doc populated
+  note?: string;                       // optional caveat
+}
+
+// Per-field provenance — drives the "why" affordance on the Review stage.
+export interface ProvenanceEntry {
+  source: string;                      // filename in the source pack
+  page?: number;
+  quote: string;                       // verbatim or paraphrased excerpt
+}
+
+// Identity fields → provenance. Keys are dot paths like "identity.sponsor",
+// "identity.enrollmentTarget", "identity.phase", "tags.armCategory", etc.
+export type StudyProvenance = Record<string, ProvenanceEntry>;
+
+// Setup-readiness checklist item — drives the Hub stage. Status is derived
+// per-study from the fixture content (a study with no tags is "not started"
+// for the tags step, etc.) but can also be overridden in the fixture.
+export interface SetupStep {
+  id: "extract" | "tags" | "journey" | "enrollment" | "export" | "publish";
+  label: string;
+  detail: string;
+  href: string;                        // route, with ?study= preserved at render time
+}
+
 export interface StudyFixture {
   identity: StudyIdentity;
   vernacular: Vernacular;
+  // Source pack + provenance — drives /study (the wizard)
+  sources: SourceDoc[];
+  provenance: StudyProvenance;
   // Tags & rules — drives /study/tags
   tagCategories: TagCategory[];
   tagRules: TagAssignmentRule[];

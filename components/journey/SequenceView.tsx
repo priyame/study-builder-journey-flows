@@ -41,6 +41,18 @@ export function SequenceView({
 
   return (
     <div className="stack" style={{ gap: 18 }}>
+      {/* Placeholder banner — Sequence view is not the real authoring surface yet. */}
+      <div className="card" style={{ borderLeft: "3px solid var(--amber)", background: "var(--amber-soft)" }}>
+        <div className="card-body" style={{ padding: 14 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "var(--amber)", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            Placeholder · R1.1
+          </div>
+          <div className="muted" style={{ fontSize: 12.5, lineHeight: 1.5, color: "var(--fg-secondary)" }}>
+            Sequence view ships in R1.1 with full drag-and-drop reordering, inline AI-assisted edits, and accessibility-first navigation. The read-only stepper below is a visual stand-in over the same Journey Elements data.
+          </div>
+        </div>
+      </div>
+
       {/* Stepper rail */}
       <div className="card">
         <div className="card-body" style={{ padding: "14px 18px", overflowX: "auto" }}>

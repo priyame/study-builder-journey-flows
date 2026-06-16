@@ -139,4 +139,30 @@ export const GENESYS: StudyFixture = {
     { subject_id: "GEN-02-003", SIDE: "BI", BASELINE_ODI: "CRIP", DISPOSITION: "Completed 24 months" },
     { subject_id: "GEN-04-008", SIDE: "R",  BASELINE_ODI: "MOD",  DISPOSITION: "Lost to follow-up" },
   ],
+
+  sources: [
+    { filename: "genesys.pdf", kind: "protocol", status: "extracted",
+      contributes_to: ["identity", "tagCategories", "elements"],
+      note: "Genesys Spine feasibility protocol — single-arm, post-market." },
+  ],
+
+  provenance: {
+    "identity.sponsor": {
+      source: "genesys.pdf",
+      page: 1,
+      quote: "Genesys Spine — sponsor of the Siros SI joint fusion feasibility study.",
+    },
+    "identity.indication": {
+      source: "genesys.pdf",
+      quote: "Sacroiliac joint dysfunction / degenerative sacroiliitis with chronic low back pain.",
+    },
+    "identity.archetype": {
+      source: "genesys.pdf",
+      quote: "Prospective, single-arm, post-market feasibility — no placebo/control. FDA-cleared device (K191748) used in approved indication.",
+    },
+    "identity.enrollmentTarget": {
+      source: "genesys.pdf",
+      quote: "N=35 minimum across 5+ sites; consecutive enrollment to minimize selection bias.",
+    },
+  },
 };

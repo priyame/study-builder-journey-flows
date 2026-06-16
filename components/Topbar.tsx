@@ -6,6 +6,7 @@ import { EnvSwitcher } from "./EnvSwitcher";
 import { StudySwitcher } from "./StudySwitcher";
 
 const CRUMB_FOR: Record<string, string> = {
+  "/study": "Study setup",
   "/study/tags": "Tags & Rules",
   "/study/journey": "Journey · Workflow Authoring",
   "/study/versions": "Versions",

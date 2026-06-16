@@ -162,4 +162,25 @@ export const BOOSTER: StudyFixture = {
     { subject_id: "BOOST-001-00002", ARM: "PLACEBO", COHORT: "ELDER",  PRIOR: "BOOSTED", ITT: "ITT", DISPOSITION: "Completed" },
     { subject_id: "BOOST-014-00018", ARM: "BOOSTER", COHORT: "MIDDLE", PRIOR: "PRIMARY", ITT: "ITT", DISPOSITION: "Withdrew consent" },
   ],
+
+  sources: [
+    { filename: "BOOSTER Final Protocol v1.0 06.Sep.2023 WCG IRB Approved (1).pdf", kind: "protocol", status: "image_only",
+      contributes_to: [],
+      note: "PDF is glyph-encoded (image-only) — text extraction failed. All fields below are inferred from a generic Phase 3 booster RCT shape." },
+  ],
+
+  provenance: {
+    "identity.sponsor": {
+      source: "BOOSTER Final Protocol v1.0 06.Sep.2023 WCG IRB Approved (1).pdf",
+      quote: "Inferred — protocol PDF is image-only and could not be parsed. Verify sponsor manually before sharing externally.",
+    },
+    "identity.indication": {
+      source: "BOOSTER Final Protocol v1.0 06.Sep.2023 WCG IRB Approved (1).pdf",
+      quote: "Inferred — placeholder fixture uses a generic vaccine-booster RCT shape.",
+    },
+    "identity.archetype": {
+      source: "BOOSTER Final Protocol v1.0 06.Sep.2023 WCG IRB Approved (1).pdf",
+      quote: "Inferred — assumed Phase 3 booster vs. placebo from the filename. Real design may differ.",
+    },
+  },
 };
