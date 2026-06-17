@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { EnvBanner } from "@/components/EnvBanner";
+import { Card, PageGuide, PageHeader, Pill, cx } from "@/components/ui";
 import { useActiveStudy } from "@/lib/active-study";
 import {
   ALL_PERMISSION_IDS,
@@ -14,17 +15,17 @@ import {
 } from "@/lib/users-model";
 import { STUDIES } from "@/lib/studies";
 
-const RISK_LABEL: Record<PermissionRisk, { label: string; color: string; bg: string }> = {
-  phi: { label: "PHI", color: "#b91c1c", bg: "rgba(220,38,38,0.10)" },
-  blinding: { label: "blinding", color: "#b45309", bg: "rgba(234,179,8,0.14)" },
-  signature: { label: "e-sign", color: "#1e40af", bg: "rgba(37,99,235,0.10)" },
-  destructive: { label: "high risk", color: "#b91c1c", bg: "rgba(220,38,38,0.10)" },
+const RISK_CHIP: Record<PermissionRisk, { label: string; cls: string }> = {
+  phi: { label: "PHI", cls: "bg-danger/10 text-danger" },
+  blinding: { label: "blinding", cls: "bg-warning/10 text-warning" },
+  signature: { label: "e-sign", cls: "bg-navy/10 text-navy" },
+  destructive: { label: "high risk", cls: "bg-danger/10 text-danger" },
 };
 
-const TIER_PILL: Record<SystemRole["tier"], { label: string; bg: string; color: string }> = {
-  org: { label: "Org tier", bg: "rgba(13,148,136,0.12)", color: "#0d9488" },
-  study: { label: "Study team", bg: "rgba(37,99,235,0.10)", color: "#1e40af" },
-  specialty: { label: "Specialty", bg: "rgba(100,116,139,0.12)", color: "#475569" },
+const TIER_PILL: Record<SystemRole["tier"], { label: string; tone: "success" | "navy" | "neutral" }> = {
+  org: { label: "Org tier", tone: "success" },
+  study: { label: "Study team", tone: "navy" },
+  specialty: { label: "Specialty", tone: "neutral" },
 };
 
 export default function UsersAndRolesPage() {
@@ -41,69 +42,92 @@ export default function UsersAndRolesPage() {
 
   return (
     <>
-      <div className="page-header">
-        <h1>Users &amp; Roles</h1>
-        <p className="lede">
-          PRD #25 §2 canonical role taxonomy: <strong>3 org-tier</strong> + <strong>6 study-team</strong> + <strong>3 specialty</strong> roles
-          built from a 10-group permission catalog. Memberships are <strong>per-study</strong> — one user can hold different roles on
-          different studies (NFR-091). Members shown are seated on{" "}
-          <strong style={{ color: "var(--accent)" }}>{identity.code}</strong>.
-        </p>
-        <span className="source-tag">PRD #25 §2 + §14 · scoped to the active study</span>
-      </div>
+      <PageHeader
+        phase="govern"
+        title="Users & Roles"
+        subtitle={
+          <>
+            PRD #25 §2 canonical role taxonomy:{" "}
+            <strong className="font-semibold text-navy">3 org-tier</strong> +{" "}
+            <strong className="font-semibold text-navy">6 study-team canonical</strong> +{" "}
+            <strong className="font-semibold text-navy">3 specialty</strong> roles, built on a 10-group
+            permission catalog. Memberships are per-study — one user can hold different roles on
+            different studies (NFR-091).
+          </>
+        }
+        action={<Pill tone="navy" mono>{identity.code}</Pill>}
+      />
+
+      <PageGuide eyebrow="How to use this">
+        Members shown are seated on the active study. Click a role in the rail to inspect its
+        grants; the <strong className="font-semibold text-navy">Compare</strong> toggle gives the
+        roles-× -domains rollup.
+      </PageGuide>
 
       <EnvBanner />
 
-      {/* ── Members on this study ───────────────────────────────────────── */}
-      <div className="card">
-        <div className="card-header">
-          <h2>Members · {members.length}</h2>
-          <span className="sub">Per-study membership rows (NFR-091). Selecting another study via the switcher re-scopes this list.</span>
+      {/* Members on this study */}
+      <Card className="mb-6">
+        <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-sm font-semibold text-navy">Members · {members.length}</h2>
+          <p className="text-xs text-slate-400">
+            Per-study membership rows. Switching studies in the topbar re-scopes this list.
+          </p>
         </div>
-        <div className="card-body" style={{ padding: 0 }}>
-          <table className="table">
-            <thead>
-              <tr>
-                <th style={{ width: 220 }}>Member</th>
-                <th style={{ width: 160 }}>Role on this study</th>
-                <th style={{ width: 90 }}>Tier</th>
-                <th style={{ width: 100 }}>Acts as</th>
-                <th>Also seated on</th>
+        <div className="overflow-x-auto rounded-lg border border-slate-100">
+          <table className="w-full text-sm">
+            <thead className="bg-canvas">
+              <tr className="border-b border-slate-100 text-left text-[10px] uppercase tracking-wide text-slate-400">
+                <th className="px-3 py-2.5 font-medium">Member</th>
+                <th className="px-3 py-2.5 font-medium">Role on this study</th>
+                <th className="px-3 py-2.5 font-medium">Tier</th>
+                <th className="px-3 py-2.5 font-medium">Acts as</th>
+                <th className="px-3 py-2.5 font-medium">Also seated on</th>
               </tr>
             </thead>
             <tbody>
               {members.map((m) => {
                 const others = studiesForUser(m.id).filter((s) => s.studyId !== identity.id);
                 return (
-                  <tr key={m.id}>
-                    <td>
-                      <div style={{ fontWeight: 600 }}>{m.name}</div>
-                      <div className="muted" style={{ fontSize: 11, fontFamily: "var(--mono, ui-monospace)" }}>{m.email}</div>
+                  <tr key={m.id} className="border-t border-slate-50">
+                    <td className="px-3 py-2.5">
+                      <div className="font-medium text-navy">{m.name}</div>
+                      <div className="font-mono text-[10px] text-slate-400">{m.email}</div>
                     </td>
-                    <td>
+                    <td className="px-3 py-2.5">
                       <button
                         type="button"
                         onClick={() => { setSelectedRoleId(m.roleId); setCompare(false); }}
-                        className="code"
-                        style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "var(--accent)" }}
+                        className="rounded bg-canvas px-1.5 py-0.5 font-mono text-[11px] font-semibold text-primary outline-none hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary/40"
+                        title={`${m.role.name} — open detail`}
                       >
                         {m.role.code} · {m.role.name}
                       </button>
                     </td>
-                    <td>
-                      <TierPill tier={m.role.tier} />
+                    <td className="px-3 py-2.5">
+                      <Pill tone={TIER_PILL[m.role.tier].tone} mono>
+                        {TIER_PILL[m.role.tier].label}
+                      </Pill>
                     </td>
-                    <td><span className="code" style={{ fontSize: 11 }}>{m.role.actsAs}</span></td>
-                    <td>
+                    <td className="px-3 py-2.5">
+                      <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-500">
+                        {m.role.actsAs}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5">
                       {others.length === 0 ? (
-                        <span className="muted" style={{ fontSize: 12 }}>—</span>
+                        <span className="text-[11px] text-slate-300">—</span>
                       ) : (
-                        <span style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                        <span className="flex flex-wrap gap-1">
                           {others.map((o) => {
-                            const study = STUDIES.find((s) => s.identity.id === o.studyId);
+                            const s = STUDIES.find((x) => x.identity.id === o.studyId);
                             return (
-                              <span key={o.studyId} className="code" style={{ fontSize: 10, padding: "1px 6px", background: "var(--surface, #f1f5f9)", borderRadius: 4 }}>
-                                {study?.identity.code ?? o.studyId} · {o.roleId}
+                              <span
+                                key={o.studyId}
+                                className="rounded bg-canvas px-1.5 py-0.5 font-mono text-[10px] text-slate-500"
+                                title={`${o.roleId} on ${s?.identity.name ?? o.studyId}`}
+                              >
+                                {s?.identity.code ?? o.studyId} · {o.roleId}
                               </span>
                             );
                           })}
@@ -116,56 +140,43 @@ export default function UsersAndRolesPage() {
             </tbody>
           </table>
         </div>
-      </div>
+      </Card>
 
-      <div style={{ height: 24 }} />
-
-      {/* ── Roles & permissions ─────────────────────────────────────────── */}
-      <div className="card">
-        <div className="card-header">
-          <h2>Roles &amp; permissions · {SYSTEM_ROLES.length} system roles</h2>
-          <span className="sub">3 tiers per PRD #25 §2. Each row clickable to inspect grants.</span>
-          <div style={{ marginLeft: "auto" }}>
-            <button className="btn btn-sm" onClick={() => setCompare((v) => !v)}>
-              {compare ? "◫ Per-role detail" : "▦ Compare all roles"}
-            </button>
-          </div>
+      {/* Roles & permissions */}
+      <Card>
+        <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-sm font-semibold text-navy">
+            Roles &amp; permissions · {SYSTEM_ROLES.length} system roles
+          </h2>
+          <button
+            type="button"
+            onClick={() => setCompare((v) => !v)}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-navy outline-none hover:border-primary/40 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/40"
+            aria-pressed={compare}
+          >
+            {compare ? "◫ Per-role detail" : "▦ Compare all roles"}
+          </button>
         </div>
-        <div className="card-body">
-          {compare ? (
-            <CompareMatrix onPick={(id) => { setSelectedRoleId(id); setCompare(false); }} />
-          ) : (
-            <div className="grid-2" style={{ gap: 16, alignItems: "flex-start" }}>
-              <div>
-                <TierGroup label="Org administration" hint="Above any single study" roles={orgRoles} selectedId={selectedRoleId} onPick={setSelectedRoleId} />
-                <TierGroup label="Study team — canonical" hint="PRD #25 §2 roles 4–9" roles={studyRoles} selectedId={selectedRoleId} onPick={setSelectedRoleId} />
-                <TierGroup label="Specialty extensions" hint="Prototype additions" roles={specialtyRoles} selectedId={selectedRoleId} onPick={setSelectedRoleId} />
-              </div>
-              <RoleDetail role={selectedRole} />
+
+        {compare ? (
+          <CompareMatrix onPick={(id) => { setSelectedRoleId(id); setCompare(false); }} />
+        ) : (
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+            <div className="space-y-3">
+              <TierGroup label="Org administration" hint="Above any single study" roles={orgRoles} selectedId={selectedRoleId} onPick={setSelectedRoleId} />
+              <TierGroup label="Study team — canonical" hint="PRD #25 §2 roles 4–9" roles={studyRoles} selectedId={selectedRoleId} onPick={setSelectedRoleId} />
+              <TierGroup label="Specialty extensions" hint="Prototype additions" roles={specialtyRoles} selectedId={selectedRoleId} onPick={setSelectedRoleId} />
+              <p className="px-1 text-[11px] leading-relaxed text-slate-400">
+                Three tiers per PRD #25 §2. Each row acts as one of the five platform authorities
+                (Admin · Author · Reviewer · DataEntry · Viewer) — the kernel enforces the authority,
+                the role profile is the day-to-day detail.
+              </p>
             </div>
-          )}
-        </div>
-      </div>
+            <RoleDetail role={selectedRole} />
+          </div>
+        )}
+      </Card>
     </>
-  );
-}
-
-function TierPill({ tier }: { tier: SystemRole["tier"] }) {
-  const p = TIER_PILL[tier];
-  return (
-    <span
-      style={{
-        display: "inline-block",
-        fontSize: 10,
-        fontWeight: 600,
-        padding: "2px 8px",
-        borderRadius: 4,
-        background: p.bg,
-        color: p.color,
-      }}
-    >
-      {p.label}
-    </span>
   );
 }
 
@@ -183,36 +194,37 @@ function TierGroup({
   onPick: (id: string) => void;
 }) {
   return (
-    <div style={{ marginBottom: 14 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
-        <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted, #64748b)" }}>{label}</span>
-        <span className="muted" style={{ fontSize: 10 }}>{hint}</span>
+    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+      <div className="flex items-baseline justify-between gap-2 border-b border-slate-100 bg-canvas px-3 py-2">
+        <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+          {label}
+        </span>
+        <span className="text-[9px] uppercase tracking-wider text-slate-300">{hint}</span>
       </div>
-      <ul style={{ listStyle: "none", margin: 0, padding: 0, border: "1px solid var(--border, #e2e8f0)", borderRadius: 8, overflow: "hidden" }}>
+      <ul>
         {roles.map((r) => {
           const active = r.id === selectedId;
           return (
-            <li key={r.id} style={{ borderBottom: "1px solid var(--border, #e2e8f0)" }}>
+            <li key={r.id}>
               <button
                 type="button"
                 onClick={() => onPick(r.id)}
                 aria-current={active}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  width: "100%",
-                  textAlign: "left",
-                  padding: "8px 12px",
-                  background: active ? "rgba(37,99,235,0.06)" : "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                }}
+                className={cx(
+                  "flex w-full items-center gap-2.5 border-b border-slate-50 px-3 py-2 text-left outline-none transition-colors last:border-0 focus-visible:ring-2 focus-visible:ring-primary/40",
+                  active ? "bg-primary/[0.06]" : "hover:bg-canvas",
+                )}
               >
-                <span className="code" style={{ fontSize: 10, fontWeight: 700, width: 40, textAlign: "center" }}>{r.code}</span>
-                <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ display: "block", fontSize: 13, fontWeight: 600, color: active ? "var(--accent)" : "inherit" }}>{r.name}</span>
-                  <span className="muted" style={{ fontSize: 10 }}>{r.grants.length} / {ALL_PERMISSION_IDS.size} permissions · acts as {r.actsAs}</span>
+                <span className="flex h-7 w-10 shrink-0 items-center justify-center rounded bg-navy/5 font-mono text-[10px] font-bold text-navy">
+                  {r.code}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className={cx("block truncate text-sm font-semibold", active ? "text-primary" : "text-navy")}>
+                    {r.name}
+                  </span>
+                  <span className="block text-[10px] text-slate-400">
+                    {r.grants.length} / {ALL_PERMISSION_IDS.size} permissions · acts as {r.actsAs}
+                  </span>
                 </span>
               </button>
             </li>
@@ -225,52 +237,43 @@ function TierGroup({
 
 function RoleDetail({ role }: { role: SystemRole }) {
   return (
-    <div style={{ border: "1px solid var(--border, #e2e8f0)", borderRadius: 12, overflow: "hidden" }}>
-      <header style={{ padding: 16, borderBottom: "1px solid var(--border, #e2e8f0)", background: "var(--surface, #f8fafc)" }}>
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
-          <h3 style={{ margin: 0, fontSize: 18 }}>{role.name}</h3>
-          <span className="code" style={{ fontSize: 11 }}>{role.code} · system</span>
-          <TierPill tier={role.tier} />
-          <span className="code" style={{ fontSize: 11 }}>acts as {role.actsAs}</span>
-          <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--muted, #64748b)" }}>
-            {role.grants.length} / {ALL_PERMISSION_IDS.size} permissions
+    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+      <header className="border-b border-slate-100 bg-canvas/60 px-5 py-4">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <h3 className="text-lg font-bold tracking-tight text-navy">{role.name}</h3>
+          <Pill tone="navy" mono>{role.code} · system</Pill>
+          <Pill tone={TIER_PILL[role.tier].tone} mono>{TIER_PILL[role.tier].label}</Pill>
+          <Pill tone="neutral" mono>acts as {role.actsAs}</Pill>
+          <span className="ml-auto text-xs text-slate-400">
+            {role.grants.length} of {ALL_PERMISSION_IDS.size} permissions
           </span>
         </div>
-        <p style={{ margin: "6px 0 0", fontSize: 12, lineHeight: 1.55, color: "var(--muted, #64748b)" }}>{role.description}</p>
+        <p className="mt-1.5 text-xs leading-relaxed text-slate-500">{role.description}</p>
       </header>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, background: "var(--border, #e2e8f0)" }}>
+      <div className="grid grid-cols-1 gap-px bg-slate-100 sm:grid-cols-2">
         {PERMISSION_GROUPS.map((gp) => {
-          const granted = gp.permissions.filter((p) => role.grants.includes(p.id));
+          const granted = gp.permissions.filter((p) => role.grants.includes(p.id)).length;
           return (
-            <section key={gp.id} style={{ background: "white", padding: 12 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
-                <h4 style={{ margin: 0, fontSize: 11, fontWeight: 700 }}>{gp.label}</h4>
-                <span className="code" style={{ fontSize: 10, color: granted.length === 0 ? "#cbd5e1" : "var(--muted, #64748b)" }}>
-                  {granted.length}/{gp.permissions.length}
+            <section key={gp.id} className="bg-white p-4">
+              <div className="mb-2 flex items-baseline justify-between gap-2">
+                <h4 className="text-xs font-bold text-navy">{gp.label}</h4>
+                <span className={cx("font-mono text-[10px]", granted === 0 ? "text-slate-300" : "text-slate-400")}>
+                  {granted}/{gp.permissions.length}
                 </span>
               </div>
-              <ul style={{ listStyle: "none", margin: 0, padding: 0, fontSize: 11, lineHeight: 1.5 }}>
+              <ul className="space-y-1">
                 {gp.permissions.map((p) => {
                   const on = role.grants.includes(p.id);
                   return (
-                    <li key={p.id} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <span style={{ width: 12, color: on ? "#0d9488" : "#cbd5e1", textAlign: "center", fontWeight: 700 }}>
+                    <li key={p.id} className="flex items-center gap-2 px-1 py-0.5 text-xs">
+                      <span className={cx("w-3.5 text-center font-bold", on ? "text-success" : "text-slate-200")} aria-hidden>
                         {on ? "✓" : "–"}
                       </span>
-                      <span style={{ color: on ? "inherit" : "#cbd5e1" }}>{p.label}</span>
+                      <span className={on ? "text-slate-600" : "text-slate-300"}>{p.label}</span>
                       {p.risk && on ? (
-                        <span
-                          style={{
-                            fontSize: 9,
-                            fontWeight: 700,
-                            padding: "1px 5px",
-                            borderRadius: 3,
-                            background: RISK_LABEL[p.risk].bg,
-                            color: RISK_LABEL[p.risk].color,
-                          }}
-                        >
-                          {RISK_LABEL[p.risk].label}
+                        <span className={cx("rounded px-1 py-px font-mono text-[9px] font-semibold", RISK_CHIP[p.risk].cls)}>
+                          {RISK_CHIP[p.risk].label}
                         </span>
                       ) : null}
                     </li>
@@ -287,18 +290,17 @@ function RoleDetail({ role }: { role: SystemRole }) {
 
 function CompareMatrix({ onPick }: { onPick: (id: string) => void }) {
   return (
-    <div style={{ overflowX: "auto" }}>
-      <table className="table">
+    <div className="overflow-x-auto rounded-xl border border-slate-200">
+      <table className="w-full border-collapse text-left">
         <thead>
-          <tr>
-            <th style={{ minWidth: 200 }}>Permission domain</th>
+          <tr className="border-b border-slate-200 bg-canvas">
+            <th className="px-4 py-3 text-xs font-semibold text-navy">Permission domain</th>
             {SYSTEM_ROLES.map((r) => (
-              <th key={r.id} style={{ textAlign: "center", minWidth: 56 }}>
+              <th key={r.id} className="border-l border-slate-100 px-2 py-3 text-center">
                 <button
                   type="button"
                   onClick={() => onPick(r.id)}
-                  className="code"
-                  style={{ background: "none", border: "none", cursor: "pointer", color: "var(--accent)", fontWeight: 700 }}
+                  className="font-mono text-[10px] font-bold text-navy outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/40"
                   title={`${r.name} — open detail`}
                 >
                   {r.code}
@@ -309,31 +311,41 @@ function CompareMatrix({ onPick }: { onPick: (id: string) => void }) {
         </thead>
         <tbody>
           {PERMISSION_GROUPS.map((gp) => (
-            <tr key={gp.id}>
-              <td style={{ fontSize: 12, fontWeight: 600 }}>
-                {gp.label} <span className="muted" style={{ fontSize: 11 }}>/ {gp.permissions.length}</span>
+            <tr key={gp.id} className="border-b border-slate-100 last:border-0">
+              <td className="px-4 py-2 text-xs font-medium text-navy">
+                {gp.label} <span className="font-mono text-[10px] text-slate-300">/{gp.permissions.length}</span>
               </td>
               {SYSTEM_ROLES.map((r) => {
-                const grantSet = new Set(r.grants);
-                const n = gp.permissions.filter((p) => grantSet.has(p.id)).length;
+                const set = new Set(r.grants);
+                const n = gp.permissions.filter((p) => set.has(p.id)).length;
                 const full = n === gp.permissions.length;
                 return (
-                  <td key={r.id} style={{ textAlign: "center", fontSize: 11, color: n === 0 ? "#cbd5e1" : full ? "#0d9488" : "var(--muted, #64748b)", fontWeight: full ? 700 : 400 }}>
+                  <td
+                    key={r.id}
+                    className={cx(
+                      "border-l border-slate-50 px-2 py-2 text-center font-mono text-[11px] tabular-nums",
+                      n === 0 ? "text-slate-200" : full ? "font-bold text-success" : "text-slate-500",
+                    )}
+                  >
                     {n === 0 ? "–" : n}
                   </td>
                 );
               })}
             </tr>
           ))}
-          <tr style={{ borderTop: "2px solid var(--border, #e2e8f0)" }}>
-            <td style={{ fontSize: 12, fontWeight: 700 }}>Total</td>
+          <tr className="bg-canvas/60">
+            <td className="px-4 py-2 text-xs font-semibold text-navy">Total</td>
             {SYSTEM_ROLES.map((r) => (
-              <td key={r.id} style={{ textAlign: "center", fontSize: 11, fontWeight: 700 }}>{r.grants.length}</td>
+              <td key={r.id} className="border-l border-slate-50 px-2 py-2 text-center font-mono text-[11px] font-bold tabular-nums text-navy">
+                {r.grants.length}
+              </td>
             ))}
           </tr>
         </tbody>
       </table>
-      <p className="muted" style={{ fontSize: 11, marginTop: 8 }}>Each cell counts the permissions granted in that domain — click a role code to open its full detail.</p>
+      <p className="border-t border-slate-100 px-4 py-2 text-[11px] text-slate-400">
+        Each cell counts the permissions granted in that domain — click a role code to open its full detail.
+      </p>
     </div>
   );
 }

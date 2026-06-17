@@ -1,23 +1,18 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { useState, useRef, useEffect } from "react";
-import { ChevronDown, Check, FileText, AlertTriangle } from "lucide-react";
+import { Check, ChevronDown, FileText, AlertTriangle } from "lucide-react";
 import { STUDIES, DEFAULT_STUDY_ID } from "@/lib/studies";
+import { cx } from "./ui";
 
-// Topbar dropdown that switches the active study. Updates `?study=<id>` on the
-// current path so deep links stay deep — every page reads the same param.
-
-const ARCHETYPE_CHIP_CLASS: Record<string, string> = {
-  rct:               "blue",
-  site_crossover:    "blue",
-  patient_crossover: "blue",
-  single_arm:        "slate",
-  registry:          "amber",
-  survey:            "slate",
-  adaptive:          "blue",
-};
-
+/**
+ * Topbar dropdown that switches the active study. Updates `?study=<id>` on the
+ * current path so deep links stay deep — every page reads the same param.
+ *
+ * Studies appear ONLY in this switcher; no other surface in the app inlines a
+ * study list (per the prototype-UI-discipline rule).
+ */
 export function StudySwitcher() {
   const router = useRouter();
   const pathname = usePathname();
@@ -28,7 +23,6 @@ export function StudySwitcher() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  // Close on outside click — kept lightweight; no popover lib.
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
@@ -48,97 +42,71 @@ export function StudySwitcher() {
   }
 
   return (
-    <div ref={ref} style={{ position: "relative" }}>
+    <div ref={ref} className="relative">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          padding: "6px 12px",
-          background: "var(--bg-surface)",
-          border: "1px solid var(--border-strong)",
-          borderRadius: "var(--r-md)",
-          cursor: "pointer",
-          fontSize: 12.5,
-        }}
+        className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 outline-none transition-colors hover:border-primary/40 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/40"
+        title="Choose a different study — everything scopes to the one you pick"
       >
-        <FileText size={13} strokeWidth={1.8} />
-        <span style={{ fontFamily: "JetBrains Mono, monospace", fontWeight: 700, color: "var(--accent)" }}>{active.identity.code}</span>
-        <span className="muted" style={{ maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{active.identity.indication}</span>
-        <ChevronDown size={12} />
+        <FileText size={13} strokeWidth={1.8} className="text-slate-400" />
+        <span className="font-mono text-[11px] font-bold text-primary">{active.identity.code}</span>
+        <span className="hidden max-w-[180px] truncate text-slate-500 lg:inline">{active.identity.indication}</span>
+        <ChevronDown size={12} className="text-slate-400" />
       </button>
 
       {open ? (
-        <div
-          style={{
-            position: "absolute",
-            top: "100%",
-            right: 0,
-            marginTop: 6,
-            minWidth: 480,
-            background: "var(--bg-surface)",
-            border: "1px solid var(--border-strong)",
-            borderRadius: "var(--r-md)",
-            boxShadow: "var(--shadow-pop)",
-            zIndex: 50,
-            overflow: "hidden",
-          }}
-        >
-          <div style={{ padding: "10px 14px", borderBottom: "1px solid var(--border-subtle)", background: "var(--bg-muted)" }}>
-            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--fg-muted)", fontWeight: 600 }}>
+        <div className="absolute right-0 top-full z-50 mt-2 w-[28rem] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+          <div className="border-b border-slate-100 bg-canvas px-4 py-3">
+            <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
               Switch study
             </div>
-            <div className="muted" style={{ fontSize: 11, marginTop: 2 }}>
-              {STUDIES.length} sample studies built from real protocols in the source pack. Every page below scopes to your selection.
+            <div className="mt-0.5 text-[11px] text-slate-500">
+              {STUDIES.length} sample studies. Every page below scopes to your selection.
             </div>
           </div>
 
-          <div style={{ maxHeight: 480, overflowY: "auto" }}>
+          <div className="max-h-[28rem] overflow-y-auto">
             {STUDIES.map((s) => {
               const isActive = s.identity.id === activeId;
-              const chipClass = ARCHETYPE_CHIP_CLASS[s.identity.archetype] ?? "slate";
               const isInferred = s.identity.dataSource !== "real";
               return (
                 <button
                   key={s.identity.id}
                   onClick={() => pick(s.identity.id)}
-                  style={{
-                    width: "100%",
-                    textAlign: "left",
-                    padding: "12px 14px",
-                    border: "none",
-                    borderBottom: "1px solid var(--border-subtle)",
-                    background: isActive ? "var(--accent-soft)" : "var(--bg-surface)",
-                    cursor: "pointer",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 4,
-                  }}
+                  className={cx(
+                    "flex w-full flex-col gap-1 border-b border-slate-50 px-4 py-3 text-left outline-none transition-colors last:border-0",
+                    isActive ? "bg-primary/[0.06]" : "hover:bg-canvas",
+                  )}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontFamily: "JetBrains Mono, monospace", fontWeight: 700, color: "var(--accent)", fontSize: 12 }}>
-                      {s.identity.code}
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs font-bold text-primary">{s.identity.code}</span>
+                    <span className="rounded border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-[9px] uppercase text-slate-500">
+                      {s.identity.archetype.replace("_", " ")}
                     </span>
-                    <span className={`chip ${chipClass}`} style={{ fontSize: 10 }}>{s.identity.archetype.replace("_", " ")}</span>
-                    {s.identity.phase ? <span className="chip slate" style={{ fontSize: 10 }}>{s.identity.phase}</span> : null}
-                    {isInferred ? (
-                      <span className="chip amber" style={{ fontSize: 10, display: "inline-flex", alignItems: "center", gap: 4 }}>
-                        <AlertTriangle size={10} /> {s.identity.dataSource === "icf_only" ? "ICF-only" : "Inferred"}
+                    {s.identity.phase ? (
+                      <span className="rounded border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-[9px] text-slate-500">
+                        {s.identity.phase}
                       </span>
                     ) : null}
-                    {isActive ? <Check size={13} color="var(--accent)" style={{ marginLeft: "auto" }} /> : null}
+                    {isInferred ? (
+                      <span className="inline-flex items-center gap-1 rounded border border-warning/40 bg-warning/10 px-1.5 py-0.5 font-mono text-[9px] font-semibold text-warning">
+                        <AlertTriangle size={10} />
+                        {s.identity.dataSource === "icf_only" ? "ICF-only" : "Inferred"}
+                      </span>
+                    ) : null}
+                    {isActive ? <Check size={13} className="ml-auto text-primary" /> : null}
                   </div>
-                  <div style={{ fontWeight: 600, fontSize: 12.5, color: "var(--fg-primary)" }}>
-                    {s.identity.name}
-                  </div>
-                  <div className="muted" style={{ fontSize: 11, lineHeight: 1.4 }}>
-                    {s.identity.tagline}
-                  </div>
-                  <div className="row wrap" style={{ gap: 4, marginTop: 4 }}>
+                  <div className="text-[13px] font-semibold text-navy">{s.identity.name}</div>
+                  <div className="text-[11px] leading-snug text-slate-500">{s.identity.tagline}</div>
+                  <div className="flex flex-wrap items-center gap-1">
                     {s.identity.chips.map((c) => (
-                      <span key={c} className="chip" style={{ fontSize: 9.5 }}>{c}</span>
+                      <span
+                        key={c}
+                        className="rounded-full bg-slate-100 px-1.5 py-0.5 font-mono text-[9px] text-slate-500"
+                      >
+                        {c}
+                      </span>
                     ))}
                   </div>
                 </button>
