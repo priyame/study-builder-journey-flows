@@ -132,7 +132,7 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="hidden w-72 shrink-0 flex-col bg-gradient-to-b from-navy via-navy to-[#10207A] px-5 py-6 text-white md:flex md:sticky md:top-0 md:h-screen md:overflow-y-auto">
+    <aside className="hidden w-64 shrink-0 flex-col bg-gradient-to-b from-navy via-navy to-[#10207A] px-4 py-6 text-white md:flex md:sticky md:top-0 md:h-screen md:overflow-y-auto">
       <Link href={`/${qs}`} className="mb-8 flex items-center gap-3 px-1 outline-none">
         <BrandMark className="h-11 w-11" />
         <div className="leading-tight">
