@@ -44,6 +44,7 @@ const GROUPS: NavGroup[] = [
     phase: "Capture",
     items: [
       { label: "Subjects & Enrollment", href: "/study/subjects", hint: "Pooja + Ana operational asks", badge: "Pooja/Ana" },
+      { label: "Imaging", href: "/imaging", hint: "DICOM medical imaging — non-diagnostic viewing with OHIF/Cornerstone, automatic de-identification", badge: "TalOSSurvey" },
     ],
   },
   {
