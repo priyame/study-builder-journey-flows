@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useActiveStudy } from "@/lib/active-study";
+import { Card, cx } from "@/components/ui";
 
 // NFR-095 — combined-dataset export shape. Each fixture supplies its own
 // exportPreview rows; this component derives columns from the rows themselves
@@ -17,8 +18,7 @@ export function ExportShapePreview() {
 
   const rows = study.exportPreview;
 
-  // Derive column groups from the actual fixture rows.
-  const { allCols, tagCols, COLUMN_GROUPS } = useMemo(() => {
+  const { tagCols, COLUMN_GROUPS } = useMemo(() => {
     const colSet = new Set<string>();
     for (const r of rows) for (const k of Object.keys(r)) colSet.add(k);
     const all = Array.from(colSet);
@@ -28,64 +28,96 @@ export function ExportShapePreview() {
       { label: "Tag categories", cols: tags },
       { label: "Status",         cols: STATUS_COLS.filter((c) => colSet.has(c)) },
     ];
-    return { allCols: all, tagCols: tags, COLUMN_GROUPS: groups.filter((g) => g.cols.length > 0) };
+    return { tagCols: tags, COLUMN_GROUPS: groups.filter((g) => g.cols.length > 0) };
   }, [rows]);
 
+  const SHAPES: Array<{ id: "wide" | "long"; label: string }> = [
+    { id: "wide", label: "Wide" },
+    { id: "long", label: "Long" },
+  ];
+
   return (
-    <div className="card">
-      <div className="card-header">
-        <h2>Combined dataset — preview for {study.identity.code}</h2>
-        <span className="sub">NFR-095 · one row per subject · tag categories as columns (wide) or rows (long)</span>
-        <div style={{ marginLeft: "auto" }}>
-          <div className="env-switcher">
-            <button data-active={shape === "wide"} onClick={() => setShape("wide")}
-              style={{ background: shape === "wide" ? "var(--accent)" : undefined, color: shape === "wide" ? "white" : undefined }}>
-              Wide
-            </button>
-            <button data-active={shape === "long"} onClick={() => setShape("long")}
-              style={{ background: shape === "long" ? "var(--accent)" : undefined, color: shape === "long" ? "white" : undefined }}>
-              Long
-            </button>
-          </div>
+    <Card className="p-0">
+      <div className="flex flex-wrap items-baseline gap-2 border-b border-slate-100 px-5 py-3">
+        <h2 className="text-sm font-semibold text-navy">
+          Combined dataset — preview for {study.identity.code}
+        </h2>
+        <span className="text-xs text-slate-400">
+          NFR-095 · one row per subject · tag categories as columns (wide) or rows (long)
+        </span>
+        <div className="ml-auto inline-flex overflow-hidden rounded-lg border border-slate-200 bg-white">
+          {SHAPES.map(({ id, label }) => {
+            const active = shape === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setShape(id)}
+                aria-pressed={active}
+                className={cx(
+                  "border-r border-slate-200 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide outline-none transition-colors last:border-r-0 focus-visible:ring-2 focus-visible:ring-primary/40",
+                  active ? "bg-primary text-white" : "text-slate-500 hover:bg-slate-50",
+                )}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
       </div>
-      <div className="card-body" style={{ padding: 0, overflowX: "auto" }}>
+
+      <div className="overflow-x-auto">
         {shape === "wide" ? (
-          <table className="table" style={{ fontSize: 11.5 }}>
-            <thead>
-              <tr>
-                {COLUMN_GROUPS.map((g) => (
-                  <th key={g.label} colSpan={g.cols.length} style={{ textAlign: "center", borderRight: "2px solid var(--border-subtle)" }}>
+          <table className="w-full text-[11.5px]">
+            <thead className="bg-canvas">
+              <tr className="border-b border-slate-100 text-left text-[10px] uppercase tracking-wide text-slate-400">
+                {COLUMN_GROUPS.map((g, i) => (
+                  <th
+                    key={g.label}
+                    colSpan={g.cols.length}
+                    className={cx(
+                      "px-3 py-2 text-center font-medium",
+                      i < COLUMN_GROUPS.length - 1 && "border-r-2 border-slate-100",
+                    )}
+                  >
                     {g.label}
                   </th>
                 ))}
               </tr>
-              <tr>
+              <tr className="border-b border-slate-100 text-left text-[10px] uppercase tracking-wide text-slate-400">
                 {COLUMN_GROUPS.flatMap((g) => g.cols).map((c) => (
-                  <th key={c} style={{ fontSize: 10 }}>{c}</th>
+                  <th key={c} className="px-3 py-2 font-medium">{c}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {rows.map((r, i) => (
-                <tr key={i}>
+                <tr key={i} className="border-t border-slate-50">
                   {COLUMN_GROUPS.flatMap((g) => g.cols).map((c) => {
                     const v = (r as Record<string, string>)[c] ?? "";
-                    if (!v) return <td key={c} className="muted" style={{ fontFamily: "JetBrains Mono, monospace" }}>—</td>;
+                    if (!v) {
+                      return (
+                        <td key={c} className="px-3 py-2 font-mono text-slate-300">—</td>
+                      );
+                    }
                     const isCode = tagCols.includes(c) || c === "subject_id";
-                    return <td key={c} style={isCode ? { fontFamily: "JetBrains Mono, monospace" } : undefined}>{v}</td>;
+                    return (
+                      <td key={c} className={cx("px-3 py-2", isCode && "font-mono")}>
+                        {v}
+                      </td>
+                    );
                   })}
                 </tr>
               ))}
             </tbody>
           </table>
         ) : (
-          <table className="table" style={{ fontSize: 11.5 }}>
-            <thead>
-              <tr>
-                <th>subject_id</th>
-                <th>tag_category</th>
-                <th>value (export_code)</th>
+          <table className="w-full text-[11.5px]">
+            <thead className="bg-canvas">
+              <tr className="border-b border-slate-100 text-left text-[10px] uppercase tracking-wide text-slate-400">
+                <th className="px-3 py-2 font-medium">subject_id</th>
+                <th className="px-3 py-2 font-medium">tag_category</th>
+                <th className="px-3 py-2 font-medium">value (export_code)</th>
               </tr>
             </thead>
             <tbody>
@@ -93,23 +125,29 @@ export function ExportShapePreview() {
                 tagCols
                   .filter((c) => ((r as Record<string, string>)[c] ?? "") !== "")
                   .map((c) => (
-                    <tr key={`${r.subject_id}-${c}`}>
-                      <td style={{ fontFamily: "JetBrains Mono, monospace" }}>{r.subject_id}</td>
-                      <td>{c}</td>
-                      <td><span className="code">{(r as Record<string, string>)[c]}</span></td>
+                    <tr key={`${r.subject_id}-${c}`} className="border-t border-slate-50">
+                      <td className="px-3 py-2 font-mono">{r.subject_id}</td>
+                      <td className="px-3 py-2">{c}</td>
+                      <td className="px-3 py-2">
+                        <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-600">
+                          {(r as Record<string, string>)[c]}
+                        </span>
+                      </td>
                     </tr>
-                  ))
+                  )),
               )}
             </tbody>
           </table>
         )}
       </div>
-      <div className="card-body" style={{ paddingTop: 0 }}>
-        <div className="muted" style={{ fontSize: 11.5, marginTop: 8 }}>
-          Columns derived from <strong>{study.identity.code}</strong>'s Tag Categories and disposition catalog.
-          Different studies produce different shapes — Tag Category names are the column headers, stable <span className="code">export_code</span>s are the cell values.
-        </div>
+
+      <div className="border-t border-slate-100 px-5 py-3 text-[11.5px] text-slate-400">
+        Columns derived from <strong className="text-slate-500">{study.identity.code}</strong>&apos;s
+        Tag Categories and disposition catalog. Different studies produce different shapes — Tag
+        Category names are the column headers, stable{" "}
+        <span className="rounded bg-slate-100 px-1 font-mono text-[10px] text-slate-600">export_code</span>s
+        are the cell values.
       </div>
-    </div>
+    </Card>
   );
 }

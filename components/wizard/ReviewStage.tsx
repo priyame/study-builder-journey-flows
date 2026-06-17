@@ -2,12 +2,8 @@
 
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import type { StudyFixture } from "@/lib/studies/types";
+import { Card, Pill } from "@/components/ui";
 import { WhyPopover } from "./WhyPopover";
-
-// Stage 2 — the extracted study profile with per-field provenance. Each row
-// shows what the AI pulled from the source pack; the small "why" button
-// opens the verbatim excerpt + page citation. Schema adapts loosely to the
-// archetype (registry vs. RCT show different fields).
 
 export function ReviewStage({
   study,
@@ -24,205 +20,223 @@ export function ReviewStage({
   const armCategory = tagCategories.find(
     (t) => t.category_type === "treatment" || (t.name.toLowerCase().includes("arm") && t.assignment_mode === "irt_push"),
   );
-  const cohortCategory = tagCategories.find((t) => t.category_type === "cohort" && t.name !== "All Patients" && t.name !== "All Participants");
+  const cohortCategory = tagCategories.find(
+    (t) => t.category_type === "cohort" && t.name !== "All Patients" && t.name !== "All Participants",
+  );
 
   return (
-    <div className="stack" style={{ gap: 18 }}>
-      <div className="grid-2">
-        {/* Identity block */}
-        <div className="card">
-          <div className="card-header">
-            <h2>Study identity</h2>
-            <span className="sub">Top-level facts extracted from the protocol</span>
+    <div className="space-y-5">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {/* Identity */}
+        <Card>
+          <div className="mb-3 flex items-baseline gap-2">
+            <h2 className="text-sm font-semibold text-navy">Study identity</h2>
+            <span className="text-xs text-slate-400">Top-level facts extracted from the protocol</span>
           </div>
-          <div className="card-body">
-            <dl className="kv">
-              <dt>Sponsor</dt>
-              <dd>
-                {identity.sponsor}
-                <WhyPopover entry={provenance["identity.sponsor"]} label="sponsor" />
-              </dd>
+          <dl className="grid gap-y-1.5 text-sm" style={{ gridTemplateColumns: "180px 1fr" }}>
+            <dt className="text-slate-400">Sponsor</dt>
+            <dd className="m-0">
+              {identity.sponsor}
+              <WhyPopover entry={provenance["identity.sponsor"]} label="sponsor" />
+            </dd>
 
-              <dt>Indication</dt>
-              <dd>
-                {identity.indication}
-                <WhyPopover entry={provenance["identity.indication"]} label="indication" />
-              </dd>
+            <dt className="text-slate-400">Indication</dt>
+            <dd className="m-0">
+              {identity.indication}
+              <WhyPopover entry={provenance["identity.indication"]} label="indication" />
+            </dd>
 
-              <dt>Archetype</dt>
-              <dd>
-                <span className="chip blue" style={{ marginRight: 4 }}>{identity.archetype.replace("_", " ")}</span>
-                {identity.phase ? <span className="chip slate">{identity.phase}</span> : null}
-                <WhyPopover entry={provenance["identity.archetype"]} label="archetype" />
-              </dd>
+            <dt className="text-slate-400">Archetype</dt>
+            <dd className="m-0 flex flex-wrap items-center gap-1.5">
+              <Pill tone="primary" mono>{identity.archetype.replace("_", " ")}</Pill>
+              {identity.phase ? <Pill tone="neutral" mono>{identity.phase}</Pill> : null}
+              <WhyPopover entry={provenance["identity.archetype"]} label="archetype" />
+            </dd>
 
-              {identity.enrollmentTarget !== undefined ? (
-                <>
-                  <dt>Target enrollment</dt>
-                  <dd>
-                    <span className="code">{identity.enrollmentTarget.toLocaleString()}</span>
-                    <WhyPopover entry={provenance["identity.enrollmentTarget"]} label="enrollment target" />
-                  </dd>
-                </>
-              ) : null}
+            {identity.enrollmentTarget !== undefined ? (
+              <>
+                <dt className="text-slate-400">Target enrollment</dt>
+                <dd className="m-0">
+                  <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-600">
+                    {identity.enrollmentTarget.toLocaleString()}
+                  </span>
+                  <WhyPopover entry={provenance["identity.enrollmentTarget"]} label="enrollment target" />
+                </dd>
+              </>
+            ) : null}
 
-              <dt>Duration</dt>
-              <dd>
-                {identity.duration ?? <span className="muted">—</span>}
-                <WhyPopover entry={provenance["identity.duration"]} label="duration" />
-              </dd>
+            <dt className="text-slate-400">Duration</dt>
+            <dd className="m-0">
+              {identity.duration ?? <span className="text-slate-300">—</span>}
+              <WhyPopover entry={provenance["identity.duration"]} label="duration" />
+            </dd>
 
-              <dt>Source citation</dt>
-              <dd className="muted" style={{ fontSize: 11.5 }}>{identity.sourceCitation}</dd>
-            </dl>
-          </div>
-        </div>
+            <dt className="text-slate-400">Source citation</dt>
+            <dd className="m-0 text-[11.5px] text-slate-400">{identity.sourceCitation}</dd>
+          </dl>
+        </Card>
 
         {/* Vernacular */}
-        <div className="card">
-          <div className="card-header">
-            <h2>Builder vernacular</h2>
-            <span className="sub">§3.5 — display-only labels per study; renaming is non-versioning</span>
+        <Card>
+          <div className="mb-3 flex items-baseline gap-2">
+            <h2 className="text-sm font-semibold text-navy">Builder vernacular</h2>
+            <span className="text-xs text-slate-400">§3.5 — display-only labels per study</span>
           </div>
-          <div className="card-body">
-            <dl className="kv">
-              <dt>Participant noun</dt>
-              <dd>{study.vernacular.participant_label}</dd>
-              <dt>Journey element</dt>
-              <dd>{study.vernacular.journey_element_label}</dd>
-              <dt>Enrollment trigger</dt>
-              <dd>{study.vernacular.enrollment_trigger_label}</dd>
-            </dl>
-            <div className="divider" />
-            <div className="muted" style={{ fontSize: 11.5, lineHeight: 1.5 }}>
-              Adapted from the protocol. Registry studies typically use "Encounter" + "Patient";
-              RCTs use "Visit" + "Participant"; survey studies use "Wave" + "Respondent".
-            </div>
-          </div>
-        </div>
+          <dl className="grid gap-y-1.5 text-sm" style={{ gridTemplateColumns: "180px 1fr" }}>
+            <dt className="text-slate-400">Participant noun</dt>
+            <dd className="m-0">{study.vernacular.participant_label}</dd>
+            <dt className="text-slate-400">Journey element</dt>
+            <dd className="m-0">{study.vernacular.journey_element_label}</dd>
+            <dt className="text-slate-400">Enrollment trigger</dt>
+            <dd className="m-0">{study.vernacular.enrollment_trigger_label}</dd>
+          </dl>
+          <div className="my-4 h-px bg-slate-100" />
+          <p className="text-[11.5px] leading-relaxed text-slate-400">
+            Adapted from the protocol. Registry studies typically use &ldquo;Encounter&rdquo; +
+            &ldquo;Patient&rdquo;; RCTs use &ldquo;Visit&rdquo; + &ldquo;Participant&rdquo;; survey studies use
+            &ldquo;Wave&rdquo; + &ldquo;Respondent&rdquo;.
+          </p>
+        </Card>
       </div>
 
-      {/* Treatment / cohort block — collapses if registry has no arms */}
-      <div className="grid-2">
-        <div className="card">
-          <div className="card-header">
-            <h2>{isRegistry ? "Cohort taxonomy" : "Randomization arms"}</h2>
-            <span className="sub">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {/* Treatment / cohort */}
+        <Card>
+          <div className="mb-3 flex items-baseline gap-2">
+            <h2 className="text-sm font-semibold text-navy">
+              {isRegistry ? "Cohort taxonomy" : "Randomization arms"}
+            </h2>
+            <span className="text-xs text-slate-400">
               {isRegistry
                 ? "Cohorts emerge from tag queries at runtime — Doctrine D1"
                 : `Treatment category · ${armCategory?.allowed_values.length ?? 0} arms`}
             </span>
           </div>
-          <div className="card-body">
-            {isRegistry ? (
-              <div>
-                {cohortCategory ? (
-                  <>
-                    <div style={{ fontWeight: 600, marginBottom: 8 }}>{cohortCategory.name}</div>
-                    <div className="row wrap" style={{ gap: 6 }}>
-                      {cohortCategory.allowed_values.map((v) => (
-                        <span key={v.export_code} className="chip slate" style={{ fontSize: 11 }}>
-                          {v.label} <span className="code" style={{ marginLeft: 4 }}>{v.export_code}</span>
-                        </span>
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <div className="muted" style={{ fontSize: 12 }}>No cohorts defined yet.</div>
-                )}
-                <WhyPopover entry={provenance["tags.diseaseCategory"] ?? provenance["tags.armCategory"]} label="cohort taxonomy" />
-              </div>
-            ) : armCategory ? (
+          {isRegistry ? (
+            cohortCategory ? (
               <>
-                <div style={{ fontWeight: 600, marginBottom: 8 }}>{armCategory.name}</div>
-                <div className="stack" style={{ gap: 6 }}>
-                  {armCategory.allowed_values.map((v) => (
-                    <div key={v.export_code} className="row" style={{ gap: 8, padding: "6px 10px", border: "1px solid var(--border-subtle)", borderRadius: "var(--r-md)" }}>
-                      <div style={{ fontWeight: 600 }}>{v.label}</div>
-                      <span className="code" style={{ marginLeft: "auto" }}>{v.export_code}</span>
-                    </div>
+                <div className="mb-2 text-sm font-semibold text-navy">{cohortCategory.name}</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {cohortCategory.allowed_values.map((v) => (
+                    <span
+                      key={v.export_code}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] text-slate-500"
+                    >
+                      {v.label}
+                      <span className="rounded bg-white px-1 font-mono text-[10px] text-slate-600">
+                        {v.export_code}
+                      </span>
+                    </span>
                   ))}
                 </div>
-                <WhyPopover entry={provenance["tags.armCategory"]} label="arms" />
+                <WhyPopover
+                  entry={provenance["tags.diseaseCategory"] ?? provenance["tags.armCategory"]}
+                  label="cohort taxonomy"
+                />
               </>
             ) : (
-              <div className="muted" style={{ fontSize: 12 }}>No randomization category set.</div>
-            )}
-          </div>
-        </div>
+              <p className="text-xs text-slate-400">No cohorts defined yet.</p>
+            )
+          ) : armCategory ? (
+            <>
+              <div className="mb-2 text-sm font-semibold text-navy">{armCategory.name}</div>
+              <div className="space-y-1.5">
+                {armCategory.allowed_values.map((v) => (
+                  <div
+                    key={v.export_code}
+                    className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 text-sm"
+                  >
+                    <div className="font-semibold">{v.label}</div>
+                    <span className="ml-auto rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-600">
+                      {v.export_code}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <WhyPopover entry={provenance["tags.armCategory"]} label="arms" />
+            </>
+          ) : (
+            <p className="text-xs text-slate-400">No randomization category set.</p>
+          )}
+        </Card>
 
-        <div className="card">
-          <div className="card-header">
-            <h2>Journey shape</h2>
-            <span className="sub">Counts derived from the extracted Journey Elements + Paths</span>
+        {/* Journey shape */}
+        <Card>
+          <div className="mb-3 flex items-baseline gap-2">
+            <h2 className="text-sm font-semibold text-navy">Journey shape</h2>
+            <span className="text-xs text-slate-400">Counts derived from the extracted Journey Elements + Paths</span>
           </div>
-          <div className="card-body">
-            <div className="row wrap" style={{ gap: 8 }}>
-              <span className="chip blue">{paths.length} paths</span>
-              <span className="chip blue">{elements.filter((e) => e.element_type === "milestone").length} milestones</span>
-              <span className="chip slate">{elements.filter((e) => e.element_type === "scheduled").length} scheduled</span>
-              <span className="chip slate">{elements.filter((e) => e.element_type === "cadence_followup").length} cadence</span>
-              <span className="chip slate">{elements.filter((e) => e.element_type === "event_triggered").length} event-triggered</span>
-              <span className="chip rose">{elements.filter((e) => e.element_type === "end_state").length} end states</span>
-            </div>
-            <div className="divider" />
-            <div className="row wrap" style={{ gap: 6, fontSize: 12, lineHeight: 1.6 }}>
-              <strong>Paths:</strong>
-              {paths.map((p) => (
-                <span key={p.id} className="chip" style={{ fontSize: 11 }}>{p.name}</span>
-              ))}
-            </div>
+          <div className="flex flex-wrap gap-2">
+            <Pill tone="primary">{paths.length} paths</Pill>
+            <Pill tone="primary">{elements.filter((e) => e.element_type === "milestone").length} milestones</Pill>
+            <Pill tone="neutral">{elements.filter((e) => e.element_type === "scheduled").length} scheduled</Pill>
+            <Pill tone="neutral">{elements.filter((e) => e.element_type === "cadence_followup").length} cadence</Pill>
+            <Pill tone="neutral">{elements.filter((e) => e.element_type === "event_triggered").length} event-triggered</Pill>
+            <Pill tone="danger">{elements.filter((e) => e.element_type === "end_state").length} end states</Pill>
           </div>
-        </div>
+          <div className="my-4 h-px bg-slate-100" />
+          <div className="flex flex-wrap items-center gap-1.5 text-xs leading-relaxed">
+            <strong className="text-navy">Paths:</strong>
+            {paths.map((p) => <Pill key={p.id} tone="neutral">{p.name}</Pill>)}
+          </div>
+        </Card>
       </div>
 
-      {/* Enrollment + dispositions */}
-      <div className="grid-2">
-        <div className="card">
-          <div className="card-header">
-            <h2>Enrollment definition</h2>
-            <span className="sub">NFR-016 · Pooja + Ana — the trigger that fills the dashboard count</span>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Card>
+          <div className="mb-3 flex items-baseline gap-2">
+            <h2 className="text-sm font-semibold text-navy">Enrollment definition</h2>
+            <span className="text-xs text-slate-400">
+              NFR-016 · the trigger that fills the dashboard count
+            </span>
           </div>
-          <div className="card-body">
-            <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 6, textTransform: "capitalize" }}>
-              {enrollmentDefinition.trigger.replace(/_/g, " ")}
-            </div>
-            <div className="muted" style={{ fontSize: 12 }}>
-              count_unit: <span className="code">{enrollmentDefinition.count_unit}</span>
-            </div>
+          <div className="text-xl font-bold capitalize tracking-tight text-navy">
+            {enrollmentDefinition.trigger.replace(/_/g, " ")}
           </div>
-        </div>
+          <div className="mt-2 text-xs text-slate-500">
+            count_unit:{" "}
+            <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-600">
+              {enrollmentDefinition.count_unit}
+            </span>
+          </div>
+        </Card>
 
-        <div className="card">
-          <div className="card-header">
-            <h2>Disposition catalog</h2>
-            <span className="sub">Terminal states + permanent catch-all (Pooja + Ana)</span>
+        <Card>
+          <div className="mb-3 flex items-baseline gap-2">
+            <h2 className="text-sm font-semibold text-navy">Disposition catalog</h2>
+            <span className="text-xs text-slate-400">Terminal states + permanent catch-all</span>
           </div>
-          <div className="card-body">
-            <div className="stack" style={{ gap: 6 }}>
-              {dispositions.map((d) => (
-                <div key={d.id} className="row" style={{
-                  padding: "6px 10px",
-                  border: "1px solid var(--border-subtle)",
-                  borderRadius: "var(--r-md)",
-                  background: d.is_catch_all ? "var(--amber-soft)" : undefined,
-                  fontSize: 12.5,
-                }}>
-                  <span style={{ fontWeight: 500 }}>{d.label}</span>
-                  {d.is_terminal ? <span className="chip rose" style={{ marginLeft: 6, fontSize: 9.5 }}>terminal</span> : null}
-                  {d.is_catch_all ? <span className="chip amber" style={{ marginLeft: 6, fontSize: 9.5 }}>catch-all</span> : null}
-                </div>
-              ))}
-            </div>
+          <div className="space-y-1.5">
+            {dispositions.map((d) => (
+              <div
+                key={d.id}
+                className={
+                  "flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 text-[12.5px] " +
+                  (d.is_catch_all ? "bg-warning/10" : "")
+                }
+              >
+                <span className="font-medium">{d.label}</span>
+                {d.is_terminal ? <Pill tone="danger" mono>terminal</Pill> : null}
+                {d.is_catch_all ? <Pill tone="warning" mono>catch-all</Pill> : null}
+              </div>
+            ))}
           </div>
-        </div>
+        </Card>
       </div>
 
-      <div className="row" style={{ justifyContent: "space-between", gap: 8 }}>
-        <button className="btn" onClick={onBack}>
+      <div className="flex justify-between gap-2">
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-navy outline-none hover:border-primary/40 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/40"
+        >
           <ArrowLeft size={14} /> Back to source pack
         </button>
-        <button className="btn btn-primary" onClick={onAdvance}>
+        <button
+          type="button"
+          onClick={onAdvance}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white outline-none hover:bg-bright focus-visible:ring-2 focus-visible:ring-primary/40"
+        >
           Open study hub <ArrowRight size={14} />
         </button>
       </div>

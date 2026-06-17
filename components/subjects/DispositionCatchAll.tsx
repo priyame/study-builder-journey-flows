@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useActiveStudy } from "@/lib/active-study";
+import { Card, Pill } from "@/components/ui";
 
-// Pooja+Ana 2026-06-10 — disposition catalog is configurable; the catch-all bucket
-// ensures every subject can land somewhere even when none of the explicit reasons fit.
+// Pooja+Ana 2026-06-10 — disposition catalog is configurable; the catch-all
+// bucket ensures every subject can land somewhere.
 
 interface Disposition {
   id: string;
@@ -25,66 +26,67 @@ export function DispositionCatchAll() {
   const add = () => {
     if (!draft.trim()) return;
     setDispositions([
-      ...dispositions.slice(0, -1), // keep "Other" last
+      ...dispositions.slice(0, -1),
       { id: draft.trim().toLowerCase().replace(/\s+/g, "_"), label: draft.trim(), is_terminal: true },
-      dispositions[dispositions.length - 1], // catch-all stays at the end
+      dispositions[dispositions.length - 1],
     ]);
     setDraft("");
   };
 
   return (
-    <div className="card">
-      <div className="card-header">
-        <h2>Dispositions</h2>
-        <span className="sub">Pooja + Ana · open catalog with a permanent catch-all bucket</span>
+    <Card>
+      <div className="mb-3 flex items-baseline gap-2">
+        <h2 className="text-sm font-semibold text-navy">Dispositions</h2>
+        <span className="text-xs text-slate-400">
+          Pooja + Ana · open catalog with a permanent catch-all bucket
+        </span>
       </div>
-      <div className="card-body">
-        <div className="stack" style={{ gap: 6 }}>
-          {dispositions.map((d, idx) => (
-            <div
-              key={d.id}
-              className="row"
-              style={{
-                padding: "8px 12px",
-                border: "1px solid var(--border-subtle)",
-                borderRadius: "var(--r-md)",
-                background: d.is_catch_all ? "var(--amber-soft)" : "var(--bg-surface)",
-              }}
-            >
-              <span className="muted" style={{ width: 24, fontSize: 11 }}>{idx + 1}.</span>
-              <span style={{ fontWeight: 500 }}>{d.label}</span>
-              {d.is_terminal ? <span className="chip rose" style={{ marginLeft: 6, fontSize: 10 }}>terminal</span> : null}
-              {d.is_catch_all ? <span className="chip amber" style={{ marginLeft: 6, fontSize: 10 }}>catch-all · cannot delete</span> : null}
-              <span className="muted" style={{ marginLeft: "auto", fontSize: 11 }}><span className="code">{d.id}</span></span>
-            </div>
-          ))}
-        </div>
 
-        <div className="divider" />
-
-        <div className="row">
-          <input
-            placeholder="Add a custom disposition (e.g., Protocol deviation)"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && add()}
-            style={{
-              flex: 1,
-              padding: "8px 12px",
-              border: "1px solid var(--border-strong)",
-              borderRadius: "var(--r-md)",
-            }}
-          />
-          <button className="btn btn-primary" onClick={add}>+ Add</button>
-        </div>
-
-        <div className="divider" />
-        <div className="muted" style={{ fontSize: 12, lineHeight: 1.6 }}>
-          The catch-all (<span className="code">other</span>) is permanent and cannot be deleted —
-          it guarantees every subject has somewhere to land. Coordinators record the free-text reason
-          on the disposition form when they pick &quot;Other&quot;.
-        </div>
+      <div className="space-y-1.5">
+        {dispositions.map((d, idx) => (
+          <div
+            key={d.id}
+            className={
+              "flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm " +
+              (d.is_catch_all ? "bg-warning/10" : "bg-white")
+            }
+          >
+            <span className="w-6 text-[11px] text-slate-400">{idx + 1}.</span>
+            <span className="font-medium text-navy">{d.label}</span>
+            {d.is_terminal ? <Pill tone="danger" mono>terminal</Pill> : null}
+            {d.is_catch_all ? <Pill tone="warning" mono>catch-all · cannot delete</Pill> : null}
+            <span className="ml-auto rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-600">
+              {d.id}
+            </span>
+          </div>
+        ))}
       </div>
-    </div>
+
+      <div className="my-4 h-px bg-slate-100" />
+
+      <div className="flex gap-2">
+        <input
+          placeholder="Add a custom disposition (e.g., Protocol deviation)"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && add()}
+          className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-navy outline-none focus:ring-2 focus:ring-primary/30"
+        />
+        <button
+          type="button"
+          onClick={add}
+          className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white outline-none hover:bg-bright focus-visible:ring-2 focus-visible:ring-primary/40"
+        >
+          + Add
+        </button>
+      </div>
+
+      <div className="my-4 h-px bg-slate-100" />
+      <p className="text-xs leading-relaxed text-slate-500">
+        The catch-all (<span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-600">other</span>)
+        is permanent and cannot be deleted — it guarantees every subject has somewhere to land.
+        Coordinators record the free-text reason on the disposition form when they pick &quot;Other&quot;.
+      </p>
+    </Card>
   );
 }

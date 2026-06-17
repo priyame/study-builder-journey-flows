@@ -2,11 +2,7 @@
 
 import { FileText, FileSpreadsheet, AlertTriangle, CheckCircle2, RefreshCw, ArrowRight } from "lucide-react";
 import type { StudyFixture, SourceDoc } from "@/lib/studies/types";
-
-// Stage 1 — the source pack. Mirrors Nathan's "Source pack" tab: list the
-// files this study was built from, with extraction status next to each. The
-// 'refresh blueprint' action is a placeholder hook for the real AI-import
-// wizard (Story 1 in PRD #12 v0.8).
+import { Card, Pill } from "@/components/ui";
 
 const KIND_LABEL: Record<SourceDoc["kind"], string> = {
   protocol:       "Protocol",
@@ -18,12 +14,13 @@ const KIND_LABEL: Record<SourceDoc["kind"], string> = {
   other:          "Other",
 };
 
-const STATUS_BADGE: Record<SourceDoc["status"], { label: string; cls: string; icon: typeof CheckCircle2 }> = {
-  extracted:    { label: "Extracted",        cls: "chip green", icon: CheckCircle2 },
-  amendment:    { label: "Amendment ref",    cls: "chip slate", icon: FileText },
-  image_only:   { label: "Image-only PDF",   cls: "chip amber", icon: AlertTriangle },
-  icf_only:     { label: "ICF only",         cls: "chip amber", icon: AlertTriangle },
-  operational:  { label: "Operational",      cls: "chip slate", icon: FileSpreadsheet },
+type Tone = "neutral" | "success" | "warning";
+const STATUS_BADGE: Record<SourceDoc["status"], { label: string; tone: Tone; icon: typeof CheckCircle2 }> = {
+  extracted:   { label: "Extracted",      tone: "success", icon: CheckCircle2 },
+  amendment:   { label: "Amendment ref",  tone: "neutral", icon: FileText },
+  image_only:  { label: "Image-only PDF", tone: "warning", icon: AlertTriangle },
+  icf_only:    { label: "ICF only",       tone: "warning", icon: AlertTriangle },
+  operational: { label: "Operational",    tone: "neutral", icon: FileSpreadsheet },
 };
 
 function iconForFile(filename: string) {
@@ -36,64 +33,73 @@ export function InputStage({ study, onAdvance }: { study: StudyFixture; onAdvanc
   const total = study.sources.length;
 
   return (
-    <div className="stack" style={{ gap: 18 }}>
-      <div className="card">
-        <div className="card-header">
-          <h2>Source pack</h2>
-          <span className="sub">
+    <div className="space-y-5">
+      <Card className="p-0">
+        <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-5 py-3">
+          <h2 className="text-sm font-semibold text-navy">Source pack</h2>
+          <span className="text-xs text-slate-400">
             {ok} of {total} docs extracted · contributes to identity, tags, journey, dispositions
           </span>
-          <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-            <button className="btn btn-sm" disabled style={{ opacity: 0.6 }}>
+          <div className="ml-auto flex gap-2">
+            <button
+              type="button"
+              disabled
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-500 opacity-60"
+            >
               <RefreshCw size={13} /> Re-extract (placeholder)
             </button>
-            <button className="btn btn-sm btn-primary" disabled style={{ opacity: 0.6 }}>
+            <button
+              type="button"
+              disabled
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-2.5 py-1 text-xs font-semibold text-white opacity-60"
+            >
               + Add document
             </button>
           </div>
         </div>
-        <div className="card-body" style={{ padding: 0 }}>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Document</th>
-                <th style={{ width: 140 }}>Kind</th>
-                <th style={{ width: 160 }}>Status</th>
-                <th>Contributes to</th>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-canvas">
+              <tr className="border-b border-slate-100 text-left text-[10px] uppercase tracking-wide text-slate-400">
+                <th className="px-3 py-2.5 font-medium">Document</th>
+                <th className="px-3 py-2.5 font-medium">Kind</th>
+                <th className="px-3 py-2.5 font-medium">Status</th>
+                <th className="px-3 py-2.5 font-medium">Contributes to</th>
               </tr>
             </thead>
             <tbody>
               {study.sources.map((s) => {
                 const FileIcon = iconForFile(s.filename);
                 const badge = STATUS_BADGE[s.status];
+                const StatusIcon = badge.icon;
                 return (
-                  <tr key={s.filename}>
-                    <td>
-                      <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                        <FileIcon size={16} color="var(--fg-muted)" style={{ marginTop: 2, flexShrink: 0 }} />
+                  <tr key={s.filename} className="border-t border-slate-50 align-top">
+                    <td className="px-3 py-2.5">
+                      <div className="flex gap-2.5">
+                        <FileIcon size={16} className="mt-0.5 shrink-0 text-slate-400" />
                         <div>
-                          <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 11.5, fontWeight: 600, wordBreak: "break-all" }}>
+                          <div className="break-all font-mono text-[11.5px] font-semibold text-navy">
                             {s.filename}
                           </div>
-                          {s.note ? (
-                            <div className="muted" style={{ fontSize: 11, marginTop: 4, lineHeight: 1.5 }}>{s.note}</div>
-                          ) : null}
+                          {s.note ? <div className="mt-1 text-[11px] leading-relaxed text-slate-400">{s.note}</div> : null}
                         </div>
                       </div>
                     </td>
-                    <td><span className="chip slate" style={{ fontSize: 11 }}>{KIND_LABEL[s.kind]}</span></td>
-                    <td>
-                      <span className={badge.cls} style={{ fontSize: 11, display: "inline-flex", alignItems: "center", gap: 4 }}>
-                        <badge.icon size={11} /> {badge.label}
-                      </span>
+                    <td className="px-3 py-2.5">
+                      <Pill tone="neutral" mono>{KIND_LABEL[s.kind]}</Pill>
                     </td>
-                    <td>
+                    <td className="px-3 py-2.5">
+                      <Pill tone={badge.tone}>
+                        <StatusIcon size={11} /> {badge.label}
+                      </Pill>
+                    </td>
+                    <td className="px-3 py-2.5">
                       {s.contributes_to.length === 0 ? (
-                        <span className="muted" style={{ fontSize: 11, fontStyle: "italic" }}>—</span>
+                        <span className="text-[11px] italic text-slate-300">—</span>
                       ) : (
-                        <div className="row wrap" style={{ gap: 4 }}>
+                        <div className="flex flex-wrap gap-1">
                           {s.contributes_to.map((c) => (
-                            <span key={c} className="chip" style={{ fontSize: 10 }}>{c}</span>
+                            <Pill key={c} tone="neutral" mono>{c}</Pill>
                           ))}
                         </div>
                       )}
@@ -104,36 +110,45 @@ export function InputStage({ study, onAdvance }: { study: StudyFixture; onAdvanc
             </tbody>
           </table>
         </div>
-      </div>
+      </Card>
 
-      <div className="card">
-        <div className="card-header">
-          <h2>What the AI did with the source pack</h2>
-          <span className="sub">Story 1 · PRD #12 v0.8 — feeds Tag Categories, Journey Elements, and the Review stage's profile</span>
+      <Card>
+        <div className="mb-3 flex items-baseline gap-2">
+          <h2 className="text-sm font-semibold text-navy">What the AI did with the source pack</h2>
+          <span className="text-xs text-slate-400">
+            Story 1 · feeds Tag Categories, Journey Elements, and the Review profile
+          </span>
         </div>
-        <div className="card-body">
-          <ul style={{ paddingLeft: 18, margin: 0, fontSize: 13, lineHeight: 1.8 }}>
-            <li>
-              <strong>Identity extraction</strong> — sponsor, indication, phase, archetype, enrollment target, duration.
-            </li>
-            <li>
-              <strong>Journey assembly</strong> — milestones, scheduled visits with day offsets + windows, branches keyed off tag expressions, cross-cutting overlays.
-            </li>
-            <li>
-              <strong>Tag taxonomy</strong> — Categories per §4 (cohort, treatment, exposure, segment, subgroup, analysis_set, operational), Assignment Rules with trigger families.
-            </li>
-            <li>
-              <strong>Disposition catalog</strong> — terminal states + a permanent catch-all per Pooja+Ana's ask.
-            </li>
-            <li>
-              <strong>Provenance</strong> — every extracted field links back to a source document, page, and excerpt. Visible in <em>Review profile</em>.
-            </li>
-          </ul>
-        </div>
-      </div>
+        <ul className="space-y-1.5 pl-5 text-[13px] leading-loose text-slate-600" style={{ listStyleType: "disc" }}>
+          <li>
+            <strong className="text-navy">Identity extraction</strong> — sponsor, indication, phase,
+            archetype, enrollment target, duration.
+          </li>
+          <li>
+            <strong className="text-navy">Journey assembly</strong> — milestones, scheduled visits
+            with day offsets + windows, branches keyed off tag expressions, cross-cutting overlays.
+          </li>
+          <li>
+            <strong className="text-navy">Tag taxonomy</strong> — Categories per §4 (cohort,
+            treatment, exposure, segment, subgroup, analysis_set, operational), Assignment Rules
+            with trigger families.
+          </li>
+          <li>
+            <strong className="text-navy">Disposition catalog</strong> — terminal states + a permanent catch-all per Pooja+Ana&apos;s ask.
+          </li>
+          <li>
+            <strong className="text-navy">Provenance</strong> — every extracted field links back to
+            a source document, page, and excerpt. Visible in <em>Review profile</em>.
+          </li>
+        </ul>
+      </Card>
 
-      <div className="row" style={{ justifyContent: "flex-end", gap: 8 }}>
-        <button className="btn btn-primary" onClick={onAdvance}>
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={onAdvance}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white outline-none hover:bg-bright focus-visible:ring-2 focus-visible:ring-primary/40"
+        >
           Review extracted profile <ArrowRight size={14} />
         </button>
       </div>

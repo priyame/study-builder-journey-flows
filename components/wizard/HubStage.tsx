@@ -3,14 +3,11 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
-  Tag, GitBranch, Users, FileDown, GitFork,
+  Tag, GitBranch, Users, FileDown, GitFork, Settings, Shield,
   CheckCircle2, Circle, AlertCircle, ArrowLeft,
 } from "lucide-react";
 import type { StudyFixture } from "@/lib/studies/types";
-
-// Stage 3 — the study hub. Setup-readiness checklist + jump-off links into
-// the 5 slice pages. Each checklist item derives its status from the
-// fixture's actual content (tags exist → done; no tags → not started).
+import { Card, StatCard, cx } from "@/components/ui";
 
 interface ChecklistItem {
   id: string;
@@ -71,7 +68,11 @@ function buildChecklist(study: StudyFixture): ChecklistItem[] {
     {
       id: "publish",
       label: "Publish a version",
-      detail: live ? `Live: ${live.version_label} · ${draft ? `${draft.version_label} in Draft` : "no Draft yet"}` : draft ? `${draft.version_label} in Draft — not yet Published` : "no versions yet",
+      detail: live
+        ? `Live: ${live.version_label} · ${draft ? `${draft.version_label} in Draft` : "no Draft yet"}`
+        : draft
+          ? `${draft.version_label} in Draft — not yet Published`
+          : "no versions yet",
       status: live ? "done" : draft ? "partial" : "todo",
       href: "/study/versions",
       icon: GitBranch,
@@ -80,9 +81,9 @@ function buildChecklist(study: StudyFixture): ChecklistItem[] {
 }
 
 const STATUS_VIS = {
-  done:    { icon: CheckCircle2, color: "var(--green)",  bg: "var(--green-soft)",  label: "Done" },
-  partial: { icon: AlertCircle,  color: "var(--amber)",  bg: "var(--amber-soft)",  label: "Partial" },
-  todo:    { icon: Circle,       color: "var(--slate)",  bg: "var(--bg-muted)",    label: "Not started" },
+  done:    { Icon: CheckCircle2, text: "Done",        cls: "bg-success/10 text-success" },
+  partial: { Icon: AlertCircle,  text: "Partial",     cls: "bg-warning/10 text-warning" },
+  todo:    { Icon: Circle,       text: "Not started", cls: "bg-slate-100 text-slate-500" },
 } as const;
 
 export function HubStage({ study, onBack }: { study: StudyFixture; onBack: () => void }) {
@@ -94,55 +95,41 @@ export function HubStage({ study, onBack }: { study: StudyFixture; onBack: () =>
   const completion = Math.round((checklist.filter((c) => c.status === "done").length / checklist.length) * 100);
 
   return (
-    <div className="stack" style={{ gap: 18 }}>
+    <div className="space-y-5">
       {/* Top stats */}
-      <div className="grid-3">
-        <div className="card">
-          <div className="card-body">
-            <div className="muted" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>
-              Setup completion
-            </div>
-            <div style={{ fontSize: 28, fontWeight: 700, marginTop: 6 }}>{completion}%</div>
-            <div style={{ marginTop: 8, height: 6, background: "var(--bg-muted)", borderRadius: 999, overflow: "hidden" }}>
-              <div style={{ height: "100%", width: `${completion}%`, background: "var(--accent)" }} />
-            </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <Card>
+          <div className="font-mono text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+            Setup completion
           </div>
-        </div>
-        <div className="card">
-          <div className="card-body">
-            <div className="muted" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>
-              Active version
-            </div>
-            <div style={{ fontSize: 22, fontWeight: 700, marginTop: 6 }}>
-              {study.versions.find((v) => v.status === "Published")?.version_label ?? <span className="muted">—</span>}
-            </div>
-            <div className="muted" style={{ fontSize: 11.5, marginTop: 4 }}>
-              {study.versions.length} total versions · Draft/UAT/Live
-            </div>
+          <div className="mt-1.5 text-3xl font-bold tracking-tight text-navy">{completion}%</div>
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
+            <div className="h-full bg-primary" style={{ width: `${completion}%` }} />
           </div>
-        </div>
-        <div className="card">
-          <div className="card-body">
-            <div className="muted" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>
-              Journey complexity
-            </div>
-            <div style={{ fontSize: 22, fontWeight: 700, marginTop: 6 }}>
-              {study.elements.length} elements
-            </div>
-            <div className="muted" style={{ fontSize: 11.5, marginTop: 4 }}>
-              {study.paths.length} paths · {study.edges.filter((e) => e.is_branch).length} branch edges
-            </div>
-          </div>
-        </div>
+        </Card>
+        <StatCard
+          label="Active version"
+          value={study.versions.find((v) => v.status === "Published")?.version_label ?? "—"}
+          sub={`${study.versions.length} total versions · Draft/UAT/Live`}
+          tone="navy"
+        />
+        <StatCard
+          label="Journey complexity"
+          value={`${study.elements.length} elements`}
+          sub={`${study.paths.length} paths · ${study.edges.filter((e) => e.is_branch).length} branch edges`}
+          tone="primary"
+        />
       </div>
 
       {/* Checklist */}
-      <div className="card">
-        <div className="card-header">
-          <h2>Setup readiness</h2>
-          <span className="sub">Status derives from this study's actual fixture content — no static todo lists</span>
+      <Card className="p-0">
+        <div className="flex items-baseline gap-2 border-b border-slate-100 px-5 py-3">
+          <h2 className="text-sm font-semibold text-navy">Setup readiness</h2>
+          <span className="text-xs text-slate-400">
+            Status derives from this study&apos;s actual fixture content
+          </span>
         </div>
-        <div className="card-body" style={{ padding: 0 }}>
+        <div>
           {checklist.map((item, i) => {
             const vis = STATUS_VIS[item.status];
             const Icon = item.icon;
@@ -150,86 +137,81 @@ export function HubStage({ study, onBack }: { study: StudyFixture; onBack: () =>
               <Link
                 key={item.id}
                 href={`${item.href}${qs}`}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 14,
-                  padding: "14px 18px",
-                  borderTop: i === 0 ? "none" : "1px solid var(--border-subtle)",
-                  textDecoration: "none",
-                  color: "inherit",
-                }}
+                className={cx(
+                  "flex items-center gap-3.5 px-5 py-3.5 transition-colors hover:bg-canvas",
+                  i > 0 && "border-t border-slate-100",
+                )}
               >
-                <div style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: "50%",
-                  background: vis.bg,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}>
-                  <vis.icon size={16} color={vis.color} />
+                <div
+                  className={cx(
+                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
+                    vis.cls,
+                  )}
+                >
+                  <vis.Icon size={16} />
                 </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    <Icon size={13} color="var(--fg-muted)" />
-                    <span style={{ fontWeight: 600, fontSize: 13.5 }}>{item.label}</span>
-                    <span style={{ fontSize: 10, color: vis.color, fontWeight: 700, marginLeft: "auto", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                      {vis.label}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <Icon size={13} className="text-slate-400" />
+                    <span className="text-sm font-semibold text-navy">{item.label}</span>
+                    <span
+                      className={cx(
+                        "ml-auto rounded-full px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide",
+                        vis.cls,
+                      )}
+                    >
+                      {vis.text}
                     </span>
                   </div>
-                  <div className="muted" style={{ fontSize: 11.5, marginTop: 4 }}>{item.detail}</div>
+                  <div className="mt-1 text-[11.5px] text-slate-400">{item.detail}</div>
                 </div>
               </Link>
             );
           })}
         </div>
-      </div>
+      </Card>
 
-      {/* Direct links to slice pages */}
-      <div className="card">
-        <div className="card-header">
-          <h2>Open a configuration surface</h2>
-          <span className="sub">Each slice scopes to {study.identity.code}</span>
+      {/* Direct links */}
+      <Card className="p-0">
+        <div className="flex items-baseline gap-2 border-b border-slate-100 px-5 py-3">
+          <h2 className="text-sm font-semibold text-navy">Open a configuration surface</h2>
+          <span className="text-xs text-slate-400">Each slice scopes to {study.identity.code}</span>
         </div>
-        <div className="card-body" style={{ padding: 0 }}>
-          <div className="grid-2" style={{ gap: 0 }}>
-            {[
-              { href: "/study/tags",     label: "Tags & Rules",       icon: Tag,       hint: "§4 · Kelly's tag model" },
-              { href: "/study/journey",  label: "Journey",            icon: GitFork,   hint: "§4.5 · 3 view modes" },
-              { href: "/study/versions", label: "Versions",           icon: GitBranch, hint: "NFR-107 · Draft / UAT / Live" },
-              { href: "/study/subjects", label: "Subjects & Enrollment", icon: Users,  hint: "NFR-016 · Pooja + Ana" },
-              { href: "/study/export",   label: "Export Shape",       icon: FileDown,  hint: "NFR-095 · combined dataset" },
-            ].map(({ href, label, icon: Icon, hint }) => (
-              <Link
-                key={href}
-                href={`${href}${qs}`}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  padding: "14px 18px",
-                  borderBottom: "1px solid var(--border-subtle)",
-                  borderRight: "1px solid var(--border-subtle)",
-                  textDecoration: "none",
-                  color: "inherit",
-                }}
-              >
-                <Icon size={18} color="var(--accent)" />
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: 13 }}>{label}</div>
-                  <div className="muted" style={{ fontSize: 11 }}>{hint}</div>
-                </div>
-              </Link>
-            ))}
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2">
+          {[
+            { href: "/study/tags",     label: "Tags & Rules",          icon: Tag,       hint: "§4 · Kelly's tag model" },
+            { href: "/study/journey",  label: "Journey",               icon: GitFork,   hint: "§4.5 · 3 view modes" },
+            { href: "/study/versions", label: "Versions",              icon: GitBranch, hint: "NFR-107 · Draft / UAT / Live" },
+            { href: "/study/subjects", label: "Subjects & Enrollment", icon: Users,     hint: "NFR-016 · Pooja + Ana" },
+            { href: "/study/export",   label: "Export Shape",          icon: FileDown,  hint: "NFR-095 · combined dataset" },
+            { href: "/study/settings", label: "Study Settings",        icon: Settings,  hint: "PRD #25 §3 · Hub" },
+            { href: "/study/users",    label: "Users & Roles",         icon: Shield,    hint: "PRD #25 §2 · taxonomy" },
+          ].map(({ href, label, icon: Icon, hint }, i, arr) => (
+            <Link
+              key={href}
+              href={`${href}${qs}`}
+              className={cx(
+                "flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-canvas",
+                i < arr.length - 1 && "border-b border-slate-100",
+                i % 2 === 0 && i < arr.length - 1 && "md:border-r md:border-r-slate-100",
+              )}
+            >
+              <Icon size={18} className="text-primary" />
+              <div>
+                <div className="text-sm font-semibold text-navy">{label}</div>
+                <div className="text-[11px] text-slate-400">{hint}</div>
+              </div>
+            </Link>
+          ))}
         </div>
-      </div>
+      </Card>
 
-      <div className="row" style={{ justifyContent: "flex-start" }}>
-        <button className="btn" onClick={onBack}>
+      <div className="flex">
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-navy outline-none hover:border-primary/40 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/40"
+        >
           <ArrowLeft size={14} /> Back to review
         </button>
       </div>
